@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, Briefcase, Lock } from 'lucide-react';
+import { Upload, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Section } from './ui/Section';
 import { Button } from './ui/Button';

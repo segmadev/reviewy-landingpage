@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Shield, Zap, FileCheck } from 'lucide-react';
+import { Brain } from 'lucide-react';
 
 import { Section } from './ui/Section';
 import { Card } from './ui/Card';

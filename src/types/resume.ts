@@ -67,6 +67,30 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface DashboardMetrics {
+  cvViews: number;
+  unlocks: number;
+  rank: number;
+  viewsThisWeek: number[];
+  pipelineBreakdown: Array<{
+    label: string;
+    value: number;
+    color: string;
+  }>;
+}
+
+export interface PricingPlan {
+  id: string;
+  name: string;
+  price: {
+    monthly: number;
+    annual: number;
+    credits: number;
+  };
+  features: string[];
+  featured?: boolean;
+}
+
 /** A CV saved to the user's library (persisted in localStorage). */
 export interface SavedCV {
   id: string;

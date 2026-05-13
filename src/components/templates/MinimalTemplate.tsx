@@ -65,7 +65,7 @@ export default function MinimalTemplate({ data, scale: s = 1, options }: Props) 
                 </span>
               </div>
               {exp.responsibilities?.length > 0 && (
-                <div style={{ paddingLeft: `${12 * s}px`, borderLeft: `${1 * s}px solid ${accent}`, borderLeftOpacity: 0.3, marginTop: `${3 * s}px`, opacity: 0.85 }}>
+                <div style={{ paddingLeft: `${12 * s}px`, borderLeft: `${1 * s}px solid ${accent}`, marginTop: `${3 * s}px`, opacity: 0.85 }}>
                   {exp.responsibilities.map((r, i) => (
                     <p key={i} style={{ fontSize: `${8 * s}px`, color: '#4b5563', marginBottom: `${2 * s}px` }}>{r}</p>
                   ))}

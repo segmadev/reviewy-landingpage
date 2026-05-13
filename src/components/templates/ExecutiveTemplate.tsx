@@ -15,7 +15,7 @@ export default function ExecutiveTemplate({ data, scale: s = 1, options }: Props
   const accent = opts.accentColor;
   const headerBg = opts.headerBg;
 
-  const { contactDetails, linkedinProfile, portfolioLinks, professionalSummary,
+  const { contactDetails, linkedinProfile, professionalSummary,
     skills, workExperience, education, certifications, references,
     languages, awards, hobbies } = data;
 
