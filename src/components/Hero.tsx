@@ -1,11 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FileText, ShieldCheck, Radio, Unlock, Users, FileCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/Button';
 
 const Hero: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
-    <section className="relative pt-32 pb-16 lg:pt-48 lg:pb-32 overflow-hidden">
+    <section className="relative pt-32 pb-16 lg:pt-48 lg:pb-10 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 right-0 -z-10 w-1/2 h-full bg-gradient-to-l from-mint-50 to-transparent opacity-50" />
       
@@ -19,22 +22,21 @@ const Hero: React.FC = () => {
           >
             <h1 className="text-3xl lg:text-5xl font-bold tracking-tight text-primary leading-tight mb-6">
               Build Your Perfect CV. <br />
-              Get Matched Instantly.
             </h1>
             <p className="text-lg text-gray-600 mb-8 max-w-lg leading-relaxed">
-              AI-powered CV tailoring and consent-driven recruiter matching — fast, fair, and fully GDPR-compliant.
+              AI-powered CV tailoring system — fast, fair, and fully GDPR-compliant.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Button size="md">
+              <Button size="md" onClick={() => navigate('/builder')}>
                 Start Building My CV
               </Button>
-              <Button variant="outline" size="md">
-                I’m a Recruiter – Discover Talent
-              </Button>
+              {/* <Button variant="outline" size="md" onClick={() => navigate('/pricing')}>
+                I'm a Recruiter – Discover Talent
+              </Button> */}
             </div>
 
-            <div className="flex items-center gap-6 text-sm font-medium text-gray-500">
+            {/* <div className="flex items-center gap-6 text-sm font-medium text-gray-500">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-mint-50 flex items-center justify-center text-primary">
                   <FileCheck className="w-4 h-4" />
@@ -47,7 +49,7 @@ const Hero: React.FC = () => {
                 </div>
                 <span><strong className="text-gray-900">128</strong> users online</span>
               </div>
-            </div>
+            </div> */}
           </motion.div>
 
           {/* Right Side - Visual Flow */}
@@ -57,28 +59,9 @@ const Hero: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="relative"
           >
-            <div className="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 relative z-10">
+            <div className="p-8 rounded-3xl relative z-10">
               <div className="grid grid-cols-2 gap-6">
-                {[
-                  { icon: FileText, label: 'Create CV', color: 'bg-blue-50 text-blue-600' },
-                  { icon: ShieldCheck, label: 'Consent', color: 'bg-purple-50 text-purple-600' },
-                  { icon: Radio, label: 'Broadcast', color: 'bg-orange-50 text-orange-600' },
-                  { icon: Unlock, label: 'Unlock', color: 'bg-green-50 text-green-600' },
-                ].map((step, index) => (
-                  <motion.div 
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                    className="flex flex-col items-center text-center p-4 rounded-2xl border border-gray-50 hover:border-gray-200 hover:shadow-md transition-all bg-white"
-                  >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${step.color}`}>
-                      <step.icon className="w-6 h-6" />
-                    </div>
-                    <span className="font-semibold text-gray-900">{step.label}</span>
-                    <span className="text-xs text-gray-400 mt-1">Step {index + 1}</span>
-                  </motion.div>
-                ))}
+                <img src="asstes/hero-img.png" alt="" />
               </div>
               
               {/* Connecting Lines (Visual only) */}

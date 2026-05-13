@@ -1,0 +1,101 @@
+{
+  "contactDetails": {
+    "fullName": "Alexander Wright",
+    "address": "24 Canary Wharf, London, E14 5AB",
+    "phone": "07700 900123",
+    "email": "alex.wright.dev@example.co.uk"
+  },
+  "linkedinProfile": "https://linkedin.com/in/alexwright-uk-dev",
+  "portfolioLinks": [
+    "https://github.com/awright-codes",
+    "https://alexwright.io"
+  ],
+  "professionalSummary": "London-based Senior Software Engineer with a decade of expertise in the UK fintech and e-commerce sectors. Highly skilled in the full Software Development Life Cycle (SDLC), with a particular focus on bridging Backend Engineering and DevOps. Expert in building resilient GitLab CI/CD pipelines and automating cloud infrastructure on AWS/GCP to drive rapid, secure delivery cycles.",
+  "skills": [
+    "Java 21 / Spring Boot",
+    "Go",
+    "GitLab CI/CD (YAML, Templates, Runners)",
+    "Infrastructure as Code (Terraform, CloudFormation)",
+    "AWS (EKS, Lambda, Fargate, S3, CloudFront)",
+    "Docker & Kubernetes (Helm)",
+    "Monitoring (Prometheus, Grafana, AWS CloudWatch)",
+    "Security (Snyk, SonarQube, OWASP Scanning)",
+    "Test Driven Development (TDD/JUnit)"
+  ],
+  "workExperience": [
+    {
+      "company": "Global Fintech Hub (London)",
+      "position": "Senior Software Engineer / Tech Lead",
+      "startDate": "2021-05-01",
+      "endDate": "2024-04-11",
+      "responsibilities": [
+        "Architected the migration of the core UK lending platform to a microservices architecture on AWS EKS, achieving 99.99% uptime.",
+        "Managed a cross-functional team of 8 engineers, fostering a 'DevSecOps' culture that prioritised security and automation.",
+        "Engineered zero-downtime deployment strategies (Blue/Green & Canary) using AWS CodeDeploy and Route53."
+      ]
+    },
+    {
+      "company": "NextGen Retail Systems (Bristol/Remote)",
+      "position": "DevOps-Focused Software Engineer",
+      "startDate": "2018-02-01",
+      "endDate": "2021-04-30",
+      "responsibilities": [
+        "Designed and implemented a comprehensive GitLab CI/CD framework from scratch, automating the build-test-deploy cycle for 40+ microservices.",
+        "Integrated 'Security-as-Code' into pipelines using Snyk for dependency scanning and SonarQube for static code analysis, reducing vulnerabilities by 60%.",
+        "Automated the provisioning of AWS environments (VPC, Subnets, RDS) using Terraform, ensuring 100% environment parity between Staging and Production.",
+        "Developed custom GitLab CI templates and 'include' files to standardise pipelines across multiple engineering teams, reducing onboarding time for new services from days to hours.",
+        "Utilised Kaniko for secure, rootless Docker image builds within the GitLab runners, pushing to Amazon ECR."
+      ]
+    },
+    {
+      "company": "Silicon Roundabout Start-up",
+      "position": "Software Engineer",
+      "startDate": "2015-10-01",
+      "endDate": "2018-01-15",
+      "responsibilities": [
+        "Developed RESTful Java services for a high-traffic e-commerce aggregator, handling peaks of 5k requests per second.",
+        "Collaborated on the initial containerisation of legacy services, moving from bare-metal servers to Dockerised environments."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Imperial College London",
+      "degree": "MSc Advanced Computing (Distinction)",
+      "startDate": "2014-10-01",
+      "endDate": "2015-09-30"
+    },
+    {
+      "institution": "University of Manchester",
+      "degree": "BSc (Hons) Computer Science (First Class)",
+      "startDate": "2011-09-20",
+      "endDate": "2014-06-15"
+    }
+  ],
+  "relevantCourseWork": "Distributed Systems, Cloud Infrastructure Automation, Cyber Security",
+  "certifications": [
+    {
+      "title": "AWS Certified Solutions Architect – Professional",
+      "issuer": "Amazon Web Services",
+      "date": "2023-01-15"
+    },
+    {
+      "title": "Google Cloud Professional Cloud Architect",
+      "issuer": "Google Cloud",
+      "date": "2022-06-10"
+    },
+    {
+      "title": "GitLab Certified Professional",
+      "issuer": "GitLab",
+      "date": "2020-05-12"
+    }
+  ],
+  "references": [
+    {
+      "name": "David Sterling",
+      "position": "VP of Engineering",
+      "company": "Global Fintech Hub",
+      "contact": "d.sterling@fintechhub.co.uk"
+    }
+  ]
+}

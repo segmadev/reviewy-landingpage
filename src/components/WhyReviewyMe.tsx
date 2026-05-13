@@ -12,24 +12,24 @@ const WhyReviewyMe: React.FC = () => {
       description: 'The perfect balance of algorithmic matching and human insight.',
       className: '',
     },
-    {
-      icon: Shield,
-      title: 'Consent at Every Step',
-      description: 'You control who sees your data and when.',
-      className: '',
-    },
-    {
-      icon: Zap,
-      title: 'Instant Opportunities',
-      description: 'Get matched in real-time.',
-      className: '',
-    },
-    {
-      icon: FileCheck,
-      title: 'GDPR-First Platform',
-      description: 'Built with privacy by design.',
-      className: '',
-    },
+    // {
+    //   icon: Shield,
+    //   title: 'Consent at Every Step',
+    //   description: 'You control who sees your data and when.',
+    //   className: '',
+    // },
+    // {
+    //   icon: Zap,
+    //   title: 'Instant Opportunities',
+    //   description: 'Get matched in real-time.',
+    //   className: '',
+    // },
+    // {
+    //   icon: FileCheck,
+    //   title: 'GDPR-First Platform',
+    //   description: 'Built with privacy by design.',
+    //   className: '',
+    // },
   ];
 
   return (

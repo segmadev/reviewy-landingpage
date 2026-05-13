@@ -1,9 +1,11 @@
 import React from 'react';
 import { Upload, Briefcase, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Section } from './ui/Section';
 import { Button } from './ui/Button';
 
 const HowItWorks: React.FC = () => {
+  const navigate = useNavigate();
   const steps = [
     {
       icon: Upload,
@@ -15,11 +17,11 @@ const HowItWorks: React.FC = () => {
       title: 'Tailor Instantly to Any Job',
       description: 'AI tailored your CV for each job opportunity.',
     },
-    {
-      icon: Lock,
-      title: 'Share Only When You Say So',
-      description: 'Full consent and control over your data.',
-    },
+    // {
+    //   icon: Lock,
+    //   title: 'Share Only When You Say So',
+    //   description: 'Full consent and control over your data.',
+    // },
   ];
 
   return (
@@ -27,7 +29,7 @@ const HowItWorks: React.FC = () => {
       <div className="bg-white rounded-[2rem] p-8 md:p-16 shadow-xl shadow-gray-200/50 border border-gray-100">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
-          <p className="text-lg text-gray-600">Three simple steps to transform your job search</p>
+          <p className="text-lg text-gray-600">Two simple steps to transform your job search</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-12 relative">
@@ -49,7 +51,7 @@ const HowItWorks: React.FC = () => {
         </div>
 
         <div className="mt-16 text-center">
-          <Button size="lg" className="rounded-xl px-10">
+          <Button size="lg" className="rounded-xl px-10" onClick={() => navigate('/auth/upload')}>
             Try It Out Now
           </Button>
         </div>
