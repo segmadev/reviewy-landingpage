@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FilePlus, Edit3, Trash2, FileText, Eye, Copy,
-  MoreVertical, Check, X, Search, Calendar, Layers,
+  MoreVertical, Check, X, Search, Calendar, Layers, ChevronLeft,
 } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import CVPreview from '../../components/builder/CVPreview';
@@ -11,9 +11,11 @@ import PreviewModal from '../../components/builder/PreviewModal';
 import DownloadMenu from '../../components/ui/DownloadMenu';
 import { useAuth } from '../../context/AuthContext';
 import { useBuilder } from '../../context/BuilderContext';
+import { useToast } from '../../context/ToastContext';
 import {
   loadLibrary, deleteCV, duplicateCV, renameCV, setActiveCV,
 } from '../../services/cvLibrary';
+import { getUserResumes, deleteResume } from '../../services/api';
 import type { SavedCV } from '../../types/resume';
 import { TEMPLATES } from '../../components/templates';
 
@@ -378,14 +380,16 @@ function EmptyState({ onCreateNew }: { onCreateNew: () => void }) {
 // ── Dashboard Page ─────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const navigate     = useNavigate();
-  const { user }     = useAuth();
+  const { user, isAuthenticated }     = useAuth();
   const { dispatch } = useBuilder();
+  const { error: showError, success } = useToast();
 
   const [cvs,          setCVs]          = useState<SavedCV[]>([]);
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedCV | null>(null);
   const [previewCV,    setPreviewCV]    = useState<SavedCV | null>(null);
   const [search,       setSearch]       = useState('');
+  const [mobileView,   setMobileView]   = useState<'list' | 'detail'>('list');
 
   // Hidden print/download ref (full-scale CV for the selected CV)
   const printRef = useRef<HTMLDivElement>(null);
@@ -398,10 +402,22 @@ export default function DashboardPage() {
   useEffect(() => { localStorage.setItem('rym_pref_hints',    String(showHints)); }, [showHints]);
 
   useEffect(() => {
-    const lib = loadLibrary();
-    setCVs(lib);
-    if (lib.length > 0) setSelectedId(lib[0].id);
-  }, []);
+    if (!isAuthenticated) return;
+
+    getUserResumes()
+      .then((backendCVs) => {
+        setCVs(backendCVs);
+        if (backendCVs.length > 0) setSelectedId(backendCVs[0].id);
+      })
+      .catch((error) => {
+        console.error('Failed to load CVs:', error);
+        // Fallback to local library if backend fails
+        const lib = loadLibrary();
+        setCVs(lib);
+        if (lib.length > 0) setSelectedId(lib[0].id);
+        showError('Failed to load CVs from server');
+      });
+  }, [isAuthenticated, showError]);
 
   const firstName  = user?.fullName?.split(' ')[0] ?? 'there';
   const selectedCV = cvs.find(c => c.id === selectedId) ?? null;
@@ -437,13 +453,22 @@ export default function DashboardPage() {
     setCVs(prev => prev.map(c => c.id === id ? { ...c, name } : c));
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
-    deleteCV(deleteTarget.id);
-    const updated = loadLibrary();
-    setCVs(updated);
-    if (selectedId === deleteTarget.id) setSelectedId(updated[0]?.id ?? null);
-    setDeleteTarget(null);
+    try {
+      // Delete from backend
+      await deleteResume(deleteTarget.id);
+      // Delete from local storage
+      deleteCV(deleteTarget.id);
+      const updated = loadLibrary();
+      setCVs(updated);
+      if (selectedId === deleteTarget.id) setSelectedId(updated[0]?.id ?? null);
+      success('CV deleted successfully');
+    } catch (error) {
+      showError('Failed to delete CV');
+    } finally {
+      setDeleteTarget(null);
+    }
   };
 
   // ── Stats ──────────────────────────────────────────────────────────────────────
@@ -460,45 +485,46 @@ export default function DashboardPage() {
       <DashboardSidebar />
 
       <main className="flex-1 overflow-y-auto">
-        <div className="px-6 py-7 space-y-6 max-w-[1280px]">
+        <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 space-y-4 sm:space-y-6 max-w-[1280px] mx-auto w-full">
 
           {/* ── Header ───────────────────────────────────────────── */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Welcome back, {firstName} 👋</h1>
-              <p className="text-gray-500 text-sm mt-0.5">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Welcome back, {firstName} 👋</h1>
+              <p className="text-gray-500 text-xs sm:text-sm mt-1 sm:mt-0.5">
                 {cvs.length === 0
                   ? 'Create your first CV to get started'
-                  : `You have ${cvs.length} CV${cvs.length !== 1 ? 's' : ''} in your library`}
+                  : `You have ${cvs.length} CV${cvs.length !== 1 ? 's' : ''}`}
               </p>
             </div>
             <button
               onClick={handleCreateNew}
-              className="flex items-center gap-2 text-white font-semibold px-5 py-2.5 rounded-xl text-sm shrink-0 hover:opacity-90 transition-opacity"
+              className="flex items-center justify-center sm:justify-start gap-2 text-white font-semibold px-4 sm:px-5 py-3 sm:py-2.5 rounded-xl text-sm shrink-0 hover:opacity-90 transition-opacity w-full sm:w-auto"
               style={{ background: '#68AE24', boxShadow: '0 4px 14px rgba(104,174,36,0.3)' }}
             >
-              <FilePlus className="w-4 h-4" /> New CV
+              <FilePlus className="w-4 h-4" />
+              <span className="sm:inline">New CV</span>
             </button>
           </div>
 
           {/* ── Stats strip — TOP of content ─────────────────────── */}
           {statsItems.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
               {statsItems.map(({ icon, label, value, text }) => (
                 <div
                   key={label}
-                  className="flex items-center gap-3 px-4 py-4"
+                  className="flex items-center gap-3 px-3 sm:px-4 py-3 sm:py-4"
                   style={{ background: '#ffffff', borderRadius: 10, border: '1.5px solid #E5E7EB' }}
                 >
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    className="w-8 sm:w-9 h-8 sm:h-9 rounded-lg flex items-center justify-center shrink-0 flex-shrink-0"
                     style={{ background: '#EDF2E9', color: '#58AF24' }}
                   >
                     {icon}
                   </div>
-                  <div>
-                    <p className={`font-bold text-gray-900 leading-tight ${text ? 'text-sm' : 'text-xl'}`}>{value}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{label}</p>
+                  <div className="min-w-0">
+                    <p className={`font-bold text-gray-900 leading-tight truncate ${text ? 'text-xs sm:text-sm' : 'text-lg sm:text-xl'}`}>{value}</p>
+                    <p className="text-[9px] sm:text-[10px] text-gray-400 mt-0.5 truncate">{label}</p>
                   </div>
                 </div>
               ))}
@@ -512,28 +538,55 @@ export default function DashboardPage() {
             <>
               {/* ── Search ──────────────────────────────────────── */}
               {cvs.length > 2 && (
-                <div className="relative max-w-sm">
+                <div className="relative w-full sm:max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search CVs…"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-white border border-gray-200 focus:border-[#68AE24] focus:outline-none text-sm text-gray-800"
+                    className="w-full pl-9 pr-9 py-2.5 sm:py-2 rounded-xl bg-white border border-gray-200 focus:border-[#68AE24] focus:outline-none text-sm text-gray-800"
                   />
                   {search && (
                     <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                     </button>
                   )}
                 </div>
               )}
 
+              {/* ── Mobile Tabs ────────────────────────────────────── */}
+              <div className="lg:hidden flex gap-2 mb-4">
+                <button
+                  onClick={() => setMobileView('list')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-colors ${
+                    mobileView === 'list'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-white text-gray-700 border border-gray-200'
+                  }`}
+                >
+                  <FileText className="w-4 h-4 inline mr-2" />
+                  My CVs
+                </button>
+                <button
+                  onClick={() => setMobileView('detail')}
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-colors ${
+                    mobileView === 'detail'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-white text-gray-700 border border-gray-200'
+                  }`}
+                  disabled={!selectedCV}
+                >
+                  <Eye className="w-4 h-4 inline mr-2" />
+                  Preview
+                </button>
+              </div>
+
               {/* ── Two-column: CV list + detail ────────────────── */}
-              <div className="flex flex-col lg:flex-row gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
 
                 {/* Left: list */}
-                <div className="lg:w-[45%] xl:w-[42%] shrink-0 flex flex-col gap-3">
+                <div className={`lg:col-span-2 flex flex-col gap-3 ${mobileView === 'list' ? 'block' : 'hidden lg:flex'}`}>
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Your CVs</p>
                     <span
@@ -544,20 +597,25 @@ export default function DashboardPage() {
                     </span>
                   </div>
 
-                  <AnimatePresence>
-                    {filtered.map(cv => (
-                      <CVRow
-                        key={cv.id}
-                        cv={cv}
-                        isSelected={selectedId === cv.id}
-                        onSelect={() => setSelectedId(cv.id)}
-                        onEdit={() => handleEdit(cv)}
-                        onDelete={() => setDeleteTarget(cv)}
-                        onDuplicate={() => handleDuplicate(cv.id)}
-                        onRename={name => handleRename(cv.id, name)}
-                      />
-                    ))}
-                  </AnimatePresence>
+                  <div className="flex flex-col gap-2 sm:gap-3 max-h-[60vh] overflow-y-auto">
+                    <AnimatePresence>
+                      {filtered.map(cv => (
+                        <CVRow
+                          key={cv.id}
+                          cv={cv}
+                          isSelected={selectedId === cv.id}
+                          onSelect={() => {
+                            setSelectedId(cv.id);
+                            setMobileView('detail');
+                          }}
+                          onEdit={() => handleEdit(cv)}
+                          onDelete={() => setDeleteTarget(cv)}
+                          onDuplicate={() => handleDuplicate(cv.id)}
+                          onRename={name => handleRename(cv.id, name)}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
 
                   {filtered.length === 0 && search && (
                     <p className="text-sm text-gray-400 text-center py-4">No CVs matching "<strong className="text-gray-600">{search}</strong>"</p>
@@ -567,7 +625,14 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Right: detail */}
-                <div className="flex-1 min-w-0">
+                <div className={`lg:col-span-3 flex flex-col min-w-0 ${mobileView === 'detail' ? 'block' : 'hidden lg:flex'}`}>
+                  <button
+                    onClick={() => setMobileView('list')}
+                    className="lg:hidden mb-3 flex items-center gap-2 text-primary text-sm font-semibold"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back to List
+                  </button>
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
                     {selectedCV ? 'CV Preview' : 'Select a CV'}
                   </p>
@@ -583,8 +648,8 @@ export default function DashboardPage() {
                       />
                     ) : (
                       <div
-                        className="flex items-center justify-center rounded-2xl"
-                        style={{ height: 260, background: '#ffffff', border: '1.5px solid #E5E7EB' }}
+                        className="flex items-center justify-center rounded-2xl flex-1"
+                        style={{ minHeight: 260, background: '#ffffff', border: '1.5px solid #E5E7EB' }}
                       >
                         <p className="text-sm text-gray-400">Select a CV to preview</p>
                       </div>
@@ -594,9 +659,9 @@ export default function DashboardPage() {
               </div>
 
               {/* ── Preferences / Toggle rows ────────────────────── */}
-              <div>
+              <div className="mt-8 sm:mt-12">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Preferences</p>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <ToggleRow
                     label="Auto-save drafts"
                     description="Automatically save your progress while building a CV"

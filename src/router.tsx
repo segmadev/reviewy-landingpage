@@ -7,6 +7,7 @@ import ChooseTemplatePage      from './pages/builder/ChooseTemplatePage';
 import DashboardPage           from './pages/dashboard/DashboardPage';
 import AccountPage             from './pages/dashboard/AccountPage';
 import DashboardTemplatesPage  from './pages/dashboard/DashboardTemplatesPage';
+import CheckoutPage            from './pages/checkout/CheckoutPage';
 
 const router = createBrowserRouter([
   { path: '/',                      element: <LandingPage />            },
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
   { path: '/dashboard',             element: <DashboardPage />          },
   { path: '/dashboard/account',     element: <AccountPage />            },
   { path: '/dashboard/templates',   element: <DashboardTemplatesPage /> },
+  { path: '/checkout',              element: <CheckoutPage />           },
   { path: '*',                      element: <LandingPage />            },
 ]);
 

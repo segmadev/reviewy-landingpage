@@ -3,22 +3,50 @@ import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
+import { useToast } from '../../../context/ToastContext';
 import { generateSummary } from '../../../services/api';
 
 export default function Step6Summary() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { error: showError } = useToast();
   const [summary, setSummary] = useState(state.professionalSummary);
   const [generating, setGenerating] = useState(false);
+  const [reasoning, setReasoning] = useState('');
+  const [conversationId, setConversationId] = useState<string | undefined>();
 
   const handleGenerate = async () => {
+    if (!state.jobDescription) {
+      showError('Please fill in the job description in Step 1 first');
+      return;
+    }
+
+    // Generate initial content from work experience and skills if summary is empty
+    let contentToSend = summary;
+    if (!contentToSend || contentToSend.trim().length === 0) {
+      const firstJob = state.workExperience?.[0];
+      const skills = state.skills?.slice(0, 5).join(', ') || '';
+
+      if (firstJob) {
+        contentToSend = `${firstJob.position}${skills ? ` with expertise in ${skills}` : ''}`;
+      } else if (skills) {
+        contentToSend = `Professional with expertise in ${skills}`;
+      } else {
+        contentToSend = 'Professional with relevant expertise';
+      }
+    }
+
     setGenerating(true);
-    const generated = await generateSummary({
-      contactDetails: state.contactDetails,
-      workExperience: state.workExperience,
-      skills: state.skills,
-    });
-    setSummary(generated);
-    setGenerating(false);
+    try {
+      const response = await generateSummary(state.jobDescription, contentToSend, conversationId);
+      setSummary(response.items[0] || '');
+      setReasoning(response.reasoning);
+      setConversationId(response.conversationId);
+    } catch (error) {
+      console.error('Failed to generate summary:', error);
+      showError('Failed to generate summary. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleNext = () => {
@@ -39,7 +67,8 @@ export default function Step6Summary() {
       <h2 className="text-3xl font-bold text-gray-900 mb-1">Professional Summary</h2>
 
       <p className="text-gray-600 mt-4 mb-6 text-sm leading-relaxed">
-        A strong 3–4 sentence summary at the top of your CV is the first thing recruiters read. Our AI generates one based on your work history, skills, and the target job.
+        A strong 3–4 sentence summary at the top of your CV is the first thing recruiters read. Our AI generates one
+        based on your work history, skills, and the target job.
       </p>
 
       <div className="mb-4">
@@ -76,10 +105,17 @@ export default function Step6Summary() {
         />
         <div className="flex justify-between mt-1">
           <p className="text-xs text-gray-400">Aim for 60–100 words</p>
-          <p className={`text-xs font-medium ${wordCount > 120 ? 'text-danger' : wordCount >= 60 ? 'text-primary' : 'text-gray-400'}`}>
+          <p
+            className={`text-xs font-medium ${
+              wordCount > 120 ? 'text-danger' : wordCount >= 60 ? 'text-primary' : 'text-gray-400'
+            }`}
+          >
             {wordCount} words
           </p>
         </div>
+        {reasoning && (
+          <p className="text-xs text-gray-500 mt-2 italic">{reasoning}</p>
+        )}
       </div>
 
       {wordCount >= 60 && wordCount <= 120 && (
@@ -94,8 +130,12 @@ export default function Step6Summary() {
       )}
 
       <div className="flex justify-between mt-4 pb-6 lg:pb-0 gap-3">
-        <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
-        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">Save & Continue →</Button>
+        <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">
+          ← Previous
+        </Button>
+        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">
+          Save & Continue →
+        </Button>
       </div>
     </motion.div>
   );

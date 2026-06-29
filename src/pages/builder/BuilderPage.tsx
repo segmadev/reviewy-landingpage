@@ -21,6 +21,9 @@ import Step6Summary from '../../components/builder/steps/Step6Summary';
 import Step7Additional from '../../components/builder/steps/Step7Additional';
 import { submitCV } from '../../services/api';
 import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
+import { useAutoSave } from '../../hooks/useAutoSave';
+import { useToast } from '../../context/ToastContext';
+import { STORAGE_KEYS } from '../../config/api.config';
 import type { SavedCV } from '../../types/resume';
 
 const DARK_PANEL = '#1c1c1e';
@@ -82,6 +85,8 @@ function BottomSheet({
 function BuilderInner() {
   const navigate = useNavigate();
   const { state, dispatch, prevStep, nextStep, goToStep } = useBuilder();
+  useAutoSave();
+  const { success, error: showError } = useToast();
   const [showPreview,    setShowPreview]    = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showModal,      setShowModal]      = useState(false);
@@ -102,38 +107,55 @@ function BuilderInner() {
 
   const handleFinish = async () => {
     dispatch({ type: 'SET_SUBMITTING', payload: true });
-    // Persist to local CV library
-    const cvId = state.submittedCvId ?? generateCVId();
-    const savedCV: SavedCV = {
-      id: cvId,
-      name: state.contactDetails.fullName
-        ? `${state.contactDetails.fullName}'s CV`
-        : 'My CV',
-      templateId: state.templateId,
-      templateCustomizations: state.templateCustomizations as Record<string, Record<string, unknown>>,
-      contactDetails: state.contactDetails,
-      linkedinProfile: state.linkedinProfile,
-      portfolioLinks: state.portfolioLinks,
-      professionalSummary: state.professionalSummary,
-      skills: state.skills,
-      workExperience: state.workExperience,
-      education: state.education,
-      relevantCourseWork: state.relevantCourseWork,
-      certifications: state.certifications,
-      references: state.references,
-      languages: state.languages ?? [],
-      awards: state.awards ?? [],
-      hobbies: state.hobbies ?? [],
-      jobDescription: state.jobDescription,
-      toggles: state.toggles,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    upsertCV(savedCV);
-    clearActiveCV();
-    await submitCV(state as any);
-    dispatch({ type: 'SET_SUBMITTED', payload: cvId });
-    navigate('/builder/result');
+    try {
+      // Get resume ID from localStorage (set by auto-save)
+      const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
+
+      // Persist to local CV library
+      const cvId = state.submittedCvId ?? resumeId ?? generateCVId();
+      const savedCV: SavedCV = {
+        id: cvId,
+        name: state.contactDetails.fullName
+          ? `${state.contactDetails.fullName}'s CV`
+          : 'My CV',
+        templateId: state.templateId,
+        templateCustomizations: state.templateCustomizations as Record<
+          string,
+          Record<string, unknown>
+        >,
+        contactDetails: state.contactDetails,
+        linkedinProfile: state.linkedinProfile,
+        portfolioLinks: state.portfolioLinks,
+        professionalSummary: state.professionalSummary,
+        skills: state.skills,
+        workExperience: state.workExperience,
+        education: state.education,
+        relevantCourseWork: state.relevantCourseWork,
+        certifications: state.certifications,
+        references: state.references,
+        languages: state.languages ?? [],
+        awards: state.awards ?? [],
+        hobbies: state.hobbies ?? [],
+        jobDescription: state.jobDescription,
+        toggles: state.toggles,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      upsertCV(savedCV);
+      clearActiveCV();
+
+      // Submit to backend with resume ID
+      await submitCV(resumeId, state as any);
+
+      success('CV saved successfully!');
+      dispatch({ type: 'SET_SUBMITTED', payload: cvId });
+      localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
+      navigate('/builder/result');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save CV';
+      showError(message);
+      dispatch({ type: 'SET_SUBMITTING', payload: false });
+    }
   };
 
   const handleNext = () => {

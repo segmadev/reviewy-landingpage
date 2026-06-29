@@ -12,6 +12,7 @@ import DownloadMenu from '../../components/ui/DownloadMenu';
 import { useBuilder } from '../../context/BuilderContext';
 import { sampleResumeData } from '../../services/mockData';
 import { upsertCV, generateCVId } from '../../services/cvLibrary';
+import { STORAGE_KEYS } from '../../config/api.config';
 import type { SavedCV } from '../../types/resume';
 
 const STEPS = [
@@ -120,7 +121,12 @@ export default function BuilderResultPage() {
 
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => navigate('/builder')}
+                onClick={() => {
+                  const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID);
+                  if (resumeId) {
+                    navigate('/builder');
+                  }
+                }}
                 className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm"
                 style={{ border: '2px solid #71CD00', color: '#71CD00' }}
               >
@@ -268,7 +274,12 @@ export default function BuilderResultPage() {
             />
 
             <button
-              onClick={() => navigate('/builder')}
+              onClick={() => {
+                const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID);
+                if (resumeId) {
+                  navigate('/builder');
+                }
+              }}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm"
               style={{ border: '2px solid #71CD00', color: '#71CD00' }}
             >

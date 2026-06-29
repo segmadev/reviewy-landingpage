@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { Button } from './ui/Button';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authState, setAuthState] = useState({ isAuthenticated: false, user: null as any });
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
   const isLanding = location.pathname === '/';
+
+  // Sync auth state from context
+  useEffect(() => {
+    setAuthState({ isAuthenticated, user });
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -64,12 +72,37 @@ const Navbar: React.FC = () => {
 
         {/* Right Buttons — desktop */}
         <div className="hidden md:flex items-center space-x-3">
-          <Button variant="ghost" size="md" onClick={() => navigate('/auth/login')}>
-            Login
-          </Button>
-          <Button size="md" onClick={() => navigate('/builder')}>
-            Get Started
-          </Button>
+          {authState.isAuthenticated && authState.user ? (
+            <>
+              <span className="text-gray-600 font-medium">
+                Welcome, {authState.user.fullName?.split(' ')[0] || authState.user.email}
+              </span>
+              <Button size="md" onClick={() => navigate('/dashboard')}>
+                Dashboard
+              </Button>
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={async () => {
+                  await logout();
+                  navigate('/');
+                }}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="md" onClick={() => navigate('/auth/login')}>
+                Login
+              </Button>
+              <Button size="md" onClick={() => navigate('/builder')}>
+                Get Started
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Hamburger — mobile */}
@@ -113,13 +146,41 @@ const Navbar: React.FC = () => {
                   </a>
                 )
               )}
-              <div className="pt-2 flex flex-col gap-2">
-                <Button variant="outline" size="md" className="w-full" onClick={() => { navigate('/auth/login'); setMobileOpen(false); }}>
-                  Login
-                </Button>
-                <Button size="md" className="w-full" onClick={() => { navigate('/builder'); setMobileOpen(false); }}>
-                  Get Started
-                </Button>
+              <div className="pt-4 border-t border-gray-100 flex flex-col gap-2">
+                {authState.isAuthenticated && authState.user ? (
+                  <>
+                    <div className="px-2 py-2">
+                      <p className="text-sm font-medium text-gray-900">
+                        Welcome, {authState.user.fullName?.split(' ')[0] || authState.user.email}
+                      </p>
+                    </div>
+                    <Button size="md" className="w-full" onClick={() => { navigate('/dashboard'); setMobileOpen(false); }}>
+                      Dashboard
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="md"
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={async () => {
+                        await logout();
+                        navigate('/');
+                        setMobileOpen(false);
+                      }}
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" size="md" className="w-full" onClick={() => { navigate('/auth/login'); setMobileOpen(false); }}>
+                      Login
+                    </Button>
+                    <Button size="md" className="w-full" onClick={() => { navigate('/builder'); setMobileOpen(false); }}>
+                      Get Started
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

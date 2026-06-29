@@ -20,7 +20,7 @@ export default function DashboardSidebar() {
 
   return (
     <aside
-      className="w-64 shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden border-r border-gray-100"
+      className="hidden sm:flex w-64 shrink-0 flex-col h-screen sticky top-0 overflow-hidden border-r border-gray-100"
       style={{ backgroundColor: '#FAFBF9' }}
     >
       {/* Logo */}

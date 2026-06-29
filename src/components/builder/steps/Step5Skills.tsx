@@ -3,25 +3,48 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Plus } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
+import { useToast } from '../../../context/ToastContext';
 import { getAISkillSuggestions } from '../../../services/api';
+import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 
 export default function Step5Skills() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { error: showError } = useToast();
+  const { suggestions: cvSuggestions } = useCVSuggestions();
   const [skills, setSkills] = useState<string[]>(state.skills.length ? state.skills : []);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [reasoning, setReasoning] = useState('');
+  const [conversationId, setConversationId] = useState<string | undefined>();
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [custom, setCustom] = useState('');
 
   useEffect(() => {
+    if (!state.jobDescription) return;
+
     let cancelled = false;
     setLoadingSuggestions(true);
-    getAISkillSuggestions(state.jobDescription).then((s) => {
-      if (!cancelled) {
-        setSuggestions(s.filter((s) => !skills.includes(s)));
-        setLoadingSuggestions(false);
-      }
-    });
-    return () => { cancelled = true; };
+
+    getAISkillSuggestions(state.jobDescription, skills, conversationId)
+      .then((response) => {
+        if (!cancelled) {
+          const newSuggestions = response.items.filter((s) => !skills.includes(s));
+          setSuggestions(newSuggestions);
+          setReasoning(response.reasoning);
+          setConversationId(response.conversationId);
+          setLoadingSuggestions(false);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to get AI suggestions:', error);
+          showError('Failed to load AI suggestions');
+          setLoadingSuggestions(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const addSkill = (skill: string) => {
@@ -104,6 +127,34 @@ export default function Step5Skills() {
         </div>
       </div>
 
+      {/* Past Skills Suggestions */}
+      {cvSuggestions.skills.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 rounded-lg border border-primary/20 bg-mint-50"
+        >
+          <div className="flex items-start gap-2 mb-3">
+            <Sparkles className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-900">Your Proven Skills</p>
+              <p className="text-xs text-gray-600 mt-1">Select relevant skills you've used in past roles. Click to add them for this job.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {cvSuggestions.skills.filter((s) => !skills.includes(s)).slice(0, 8).map((skill) => (
+              <button
+                key={skill}
+                onClick={() => addSkill(skill)}
+                className="px-3 py-1 rounded-full border border-gray-300 text-gray-700 text-xs font-medium bg-white hover:bg-primary hover:text-white hover:border-primary transition-colors"
+              >
+                + {skill}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* AI Suggestions */}
       <div>
         <div className="flex items-center gap-2 mb-3">
@@ -117,6 +168,9 @@ export default function Step5Skills() {
             />
           )}
         </div>
+        {reasoning && (
+          <p className="text-xs text-gray-500 mb-2 italic">{reasoning}</p>
+        )}
         <div className="flex flex-wrap gap-2">
           {suggestions.map((s) => (
             <motion.button
@@ -135,7 +189,9 @@ export default function Step5Skills() {
       </div>
 
       <div className="flex justify-between mt-8 pb-6 lg:pb-0 gap-3">
-        <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
+        <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">
+          ← Previous
+        </Button>
         <Button size="lg" onClick={handleNext} disabled={skills.length === 0} className="w-full lg:w-auto">
           Save & Continue →
         </Button>

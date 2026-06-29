@@ -1,14 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
+import { useAuth } from '../../../context/AuthContext';
+import { getUserProfile } from '../../../services/api';
 import type { ContactDetails } from '../../../types/resume';
 
 export default function Step2Contact() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { user } = useAuth();
   const [contact, setContact] = useState<ContactDetails>({ ...state.contactDetails });
   const [linkedin, setLinkedin] = useState(state.linkedinProfile);
   const [portfolio, setPortfolio] = useState<string[]>([...state.portfolioLinks]);
+
+  // Auto-fill contact details from user profile
+  useEffect(() => {
+    if (!user?.id || contact.fullName) return;
+
+    getUserProfile()
+      .then((profile) => {
+        setContact((prev) => ({
+          ...prev,
+          fullName: profile.fullName || prev.fullName,
+          email: profile.email || prev.email,
+        }));
+      })
+      .catch((error) => {
+        console.error('Failed to fetch profile:', error);
+      });
+  }, [user?.id]);
 
   const handleNext = () => {
     dispatch({ type: 'SET_CONTACT', payload: contact });
@@ -156,8 +176,12 @@ export default function Step2Contact() {
       </div>
 
       <div className="flex justify-between mt-8 pb-6 lg:pb-0 gap-3">
-        <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
-        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">Save & Continue →</Button>
+        <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">
+          ← Previous
+        </Button>
+        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">
+          Save & Continue →
+        </Button>
       </div>
     </motion.div>
   );

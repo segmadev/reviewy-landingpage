@@ -1,0 +1,954 @@
+{
+  "info": {
+    "_postman_id": "77f5cbf7-bbd8-4163-837e-10c045d746aa",
+    "name": "Reviewyme API Collection Shared",
+    "description": "Complete API collection for Reviewyme Marketplace Backend. All requests route through the API Gateway. Uses UK sample data throughout.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "43779472"
+  },
+  "item": [
+    {
+      "name": "Auth (User Service)",
+      "item": [
+        {
+          "name": "Register Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var body = pm.response.text();",
+                  "    var match = body.match(/ID: (.+)/);",
+                  "    if (match) pm.environment.set(\"user_id\", match[1]);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"firstName\": \"James\",\n\t\"lastName\": \"Harrison\",\n\t\"email\": \"james.harrison@techmail.co.uk\",\n\t\"password\": \"SecurePass123!\",\n\t\"phoneNumber\": \"+447911123456\",\n\t\"address\": {\n\t\t\"line1\": \"42 Kensington High Street\",\n\t\t\"line2\": \"Flat 3B\",\n\t\t\"city\": \"London\",\n\t\t\"county\": \"Greater London\",\n\t\t\"postcode\": \"W8 4PT\",\n\t\t\"country\": \"United Kingdom\"\n\t}\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/user/signup",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "user",
+                "signup"
+              ]
+            },
+            "description": "Register a new customer account. No authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Login-User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"access_token\", jsonData.accessToken);",
+                  "    pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"email\": \"james.harrison@techmail.co.uk\",\n\t\"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/user/login",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "user",
+                "login"
+              ]
+            },
+            "description": "Login with email and password. Returns access and refresh tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"access_token\", jsonData.accessToken);",
+                  "    if (jsonData.refreshToken) {",
+                  "        pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/user/refresh-token",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "user",
+                "refresh-token"
+              ]
+            },
+            "description": "Refresh an expired access token using a valid refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Own Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/user/profile",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "user",
+                "profile"
+              ]
+            },
+            "description": "Get the authenticated user's profile. Requires Bearer token."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/user/{{user_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "user",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get a user's details by their ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/user/logout/{{user_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "user",
+                "logout",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Logout a user and invalidate their tokens."
+          },
+          "response": []
+        }
+      ],
+      "description": "User authentication and management endpoints"
+    },
+    {
+      "name": "Products (Product Service) - Commerce",
+      "item": [
+        {
+          "name": "List Active Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/product/active",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "product",
+                "active"
+              ]
+            },
+            "description": "List all active products available for purchase. Customer-facing endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/product/find/{{product_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "product",
+                "find",
+                "{{product_id}}"
+              ]
+            },
+            "description": "Get a specific product by its ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"product_id\", jsonData.productId);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Professional CV Review\",\n    \"description\": \"Comprehensive CV review by an experienced recruiter.\",\n    \"pricing\": [\n        {\n            \"amount\": 49.99,\n            \"currency\": \"GBP\",\n            \"type\": \"ONE_OFF\"\n        },\n        {\n            \"amount\": 29.99,\n            \"currency\": \"GBP\",\n            \"type\": \"RECURRING\",\n            \"billingCycle\": \"P28D\",\n            \"trialAmount\": 0.00,\n            \"trialPeriod\": \"P7D\"\n        }\n    ],\n    \"category\": \"CV_REVIEW\",\n    \"features\": [\n        \"Detailed written feedback\",\n        \"ATS compatibility check\",\n        \"48-hour turnaround\"\n    ],\n    \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/product/create",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "product",
+                "create"
+              ]
+            },
+            "description": "Create a new product. Requires admin authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"features\": [\n        \"Video feedback session\",\n        \"Complete rewrite suggestions\",\n        \"LinkedIn profile review\",\n        \"ATS compatibility check\",\n        \"24-hour turnaround\"\n    ],\n    \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/product/update/{{product_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "product",
+                "update",
+                "{{product_id}}"
+              ]
+            },
+            "description": "Update an existing product. Requires admin authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Product",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/product/deactivate/{{product_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "product",
+                "deactivate",
+                "{{product_id}}"
+              ]
+            },
+            "description": "Deactivate a product (soft delete). Requires admin authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Products (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/product/get-all",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "product",
+                "get-all"
+              ]
+            },
+            "description": "Get all products including inactive ones. Requires admin authentication."
+          },
+          "response": []
+        }
+      ],
+      "description": "Product management endpoints for CV review packages and services"
+    },
+    {
+      "name": "Resumes (Resume Service)",
+      "item": [
+        {
+          "name": "Save New Resume",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"resume_id\", jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"contactDetails\": {\n        \"fullName\": \"James Harrison-1\",\n        \"address\": \"42 Kensington High Street, London, W8 4PT\",\n        \"phone\": \"+447911123456\",\n        \"email\": \"james.harrison@techmail.co.uk\"\n    },\n    \"jobUrl\": \"www.jobserve.com/software-engineer\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes"
+              ]
+            },
+            "description": "Save a new resume/CV. Returns the created resume with ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Resume by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/{{resume_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "{{resume_id}}"
+              ]
+            },
+            "description": "Retrieve a specific resume by its ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Resume (Partial)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"professionalSummary\": \"Senior software engineer with 8+ years delivering high-performance microservices for FTSE 100 companies. Expert in Java, Spring Boot, AWS, and event-driven architectures. Track record of leading teams and mentoring junior developers.\",\n    \"skills\": [\n        \"Java\",\n        \"Spring Boot\",\n        \"AWS\",\n        \"React\",\n        \"Kubernetes\",\n        \"PostgreSQL\",\n        \"Kafka\",\n        \"TypeScript\",\n        \"Terraform\",\n        \"Docker\"\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/{{resume_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "{{resume_id}}"
+              ]
+            },
+            "description": "Partially update an existing resume. Only provided fields are updated."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Resume",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/{{resume_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "{{resume_id}}"
+              ]
+            },
+            "description": "Delete a resume by its ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User CV History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/user",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "user"
+              ]
+            },
+            "description": "Get all resumes/CVs for a specific user."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 1 — Suggest Work Experience Bullets (new conversation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('conversationId', json.conversationId);",
+                  "    pm.test('Conversation ID returned', function() {",
+                  "        pm.expect(json.conversationId).to.not.be.empty;",
+                  "    });",
+                  "    pm.test('Items is a non-empty array', function() {",
+                  "        pm.expect(json.items).to.be.an('array').that.is.not.empty;",
+                  "    });",
+                  "    pm.test('Field name matches request', function() {",
+                  "        pm.expect(json.fieldName).to.equal('workExperience');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{customerId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "ROLE_USER"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fieldName\": \"workExperience\",\n  \"currentContent\": \"{\\\"position\\\": \\\"Senior Software Engineer\\\", \\\"company\\\": \\\"Barclays Bank PLC\\\", \\\"startDate\\\": \\\"2020-03\\\", \\\"endDate\\\": \\\"2024-01\\\"}\",\n  \"jobDescription\": \"https://jobs.bt.com/BT/job/Software-Engineering-Professional/55330-en_GB\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/ai-suggestions",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "ai-suggestions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 — Suggest Skills (continuing conversation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.test('Same conversation ID', function() {",
+                  "        pm.expect(json.conversationId).to.equal(pm.collectionVariables.get('conversationId'));",
+                  "    });",
+                  "    pm.test('Skills returned as list', function() {",
+                  "        pm.expect(json.items).to.be.an('array');",
+                  "        pm.expect(json.items.length).to.be.above(3);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{customerId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "ROLE_USER"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{conversationId}}\",\n  \"fieldName\": \"skills\",\n  \"currentContent\": \"[\\\"Java\\\", \\\"Spring Boot\\\", \\\"AWS\\\"]\",\n  \"jobDescription\": \"We are seeking a Senior Backend Engineer to join our payments platform team at HSBC UK. You will design and build high-throughput microservices using Java 21, Spring Boot 3, and Kubernetes.\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/ai-suggestions",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "ai-suggestions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 — Generate Professional Summary (continuing conversation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.test('Summary returned as single-item list', function() {",
+                  "        pm.expect(json.items).to.be.an('array');",
+                  "        pm.expect(json.items.length).to.be.at.least(1);",
+                  "    });",
+                  "    pm.test('Reasoning provided', function() {",
+                  "        pm.expect(json.reasoning).to.not.be.empty;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{customerId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "ROLE_USER"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{conversationId}}\",\n  \"fieldName\": \"professionalSummary\",\n  \"currentContent\": \"Experienced software engineer with strong Java skills.\",\n  \"jobDescription\": \"We are seeking a Senior Backend Engineer to join our payments platform team at HSBC UK. You will design and build high-throughput microservices using Java 21, Spring Boot 3, and Kubernetes.\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/ai-suggestions",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "ai-suggestions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 4 — Suggest Certifications (continuing conversation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{customerId}}"
+              },
+              {
+                "key": "X-User-Roles",
+                "value": "ROLE_USER"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"conversationId\": \"{{conversationId}}\",\n  \"fieldName\": \"certifications\",\n  \"currentContent\": \"[\\\"AWS Certified Solutions Architect\\\"]\",\n  \"jobDescription\": \"We are seeking a Senior Backend Engineer to join our payments platform team at HSBC UK. You will design and build high-throughput microservices using Java 21, Spring Boot 3, and Kubernetes.\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/resume/resumes/ai-suggestions",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "resume",
+                "resumes",
+                "ai-suggestions"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Resume/CV management, submission, and AI tailoring endpoints"
+    },
+    {
+      "name": "Payments (Payment Service) - Commerce",
+      "item": [
+        {
+          "name": "Initiate Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"transaction_id\", jsonData.transactionId);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"id\": \"{{user_id}}\"\n  },\n  \"product\": {\n    \"productId\": \"{{product_id}}\",\n    \"quantity\": 1\n  }\n}\n"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/payment/initiate",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "payment",
+                "initiate"
+              ]
+            },
+            "description": "Initiate a payment for a product/service."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/payment/verify/{{transaction_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "payment",
+                "verify",
+                "{{transaction_id}}"
+              ]
+            },
+            "description": "Verify the status of a payment by transaction ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/payment/user-payments?userId={{user_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "payment",
+                "user-payments"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{user_id}}"
+                }
+              ]
+            },
+            "description": "Get all payments for a specific user."
+          },
+          "response": []
+        }
+      ],
+      "description": "Payment processing and verification endpoints"
+    },
+    {
+      "name": "Notifications (Notification Service)",
+      "item": [
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/notification/user-notifications?userId={{user_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "notification",
+                "user-notifications"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{user_id}}"
+                }
+              ]
+            },
+            "description": "Get all notifications for a specific user."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Notification (Internal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumeId\": \"{{resume_id}}\",\n  \"target\": \"CUSTOMER\",\n  \"customerId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/notification/send",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "notification",
+                "send"
+              ]
+            },
+            "description": "Send a notification to a user. Typically called internally by other services."
+          },
+          "response": []
+        }
+      ],
+      "description": "Notification management and delivery endpoints"
+    },
+    {
+      "name": "User Products (User Product Service) - Commerce",
+      "item": [
+        {
+          "name": "Get User Purchased Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/user-product/get/{{user_id}}",
+              "host": [
+                "{{gateway_url}}"
+              ],
+              "path": [
+                "user-product",
+                "get",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get all products purchased by a specific user."
+          },
+          "response": []
+        }
+      ],
+      "description": "User-product mapping and purchased products endpoints"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "gateway_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "resume_id",
+      "value": ""
+    },
+    {
+      "key": "transaction_id",
+      "value": ""
+    },
+    {
+      "key": "product_id",
+      "value": ""
+    },
+    {
+      "key": "conversationId",
+      "value": ""
+    }
+  ]
+}

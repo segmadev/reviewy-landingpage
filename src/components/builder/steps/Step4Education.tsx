@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
+import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import type { Education } from '../../../types/resume';
 
 const levels = ['Bachelors', 'Masters', 'Doctoral', 'HND / Diploma', 'A-Levels', 'Other'];
@@ -13,6 +14,7 @@ function newEntry(): Education {
 
 export default function Step4Education() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { suggestions } = useCVSuggestions();
   const [entries, setEntries] = useState<Education[]>(
     state.education.length > 0 ? state.education : [newEntry()]
   );
@@ -119,6 +121,43 @@ export default function Step4Education() {
           </div>
         ))}
       </div>
+
+      {/* Suggestions from past CVs */}
+      {suggestions.educations.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-4 rounded-lg border border-primary/20 bg-mint-50"
+        >
+          <div className="flex items-start gap-2 mb-3">
+            <Sparkles className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-900">Your Qualifications</p>
+              <p className="text-xs text-gray-600 mt-1">Select relevant education for this job. Click to add qualifications.</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {suggestions.educations.slice(0, 3).map((edu, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setEntries((prev) => [...prev, {
+                    id: Date.now().toString() + idx,
+                    institution: edu.institution,
+                    degree: edu.degree,
+                    startDate: edu.startDate,
+                    endDate: edu.endDate,
+                  }]);
+                }}
+                className="w-full text-left p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors border border-gray-200"
+              >
+                <p className="text-sm font-medium text-gray-900">{edu.degree}</p>
+                <p className="text-xs text-gray-600">{edu.institution}</p>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <button
         onClick={() => setEntries((prev) => [...prev, newEntry()])}

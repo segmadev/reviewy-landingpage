@@ -4,6 +4,7 @@ import { Plus, Trash2, Sparkles, Check, X } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
 import { getAIBulletPoints } from '../../../services/api';
+import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import type { WorkExperience } from '../../../types/resume';
 
 function newEntry(): WorkExperience {
@@ -12,6 +13,7 @@ function newEntry(): WorkExperience {
 
 export default function Step3WorkHistory() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { suggestions } = useCVSuggestions();
   const [entries, setEntries] = useState<WorkExperience[]>(
     state.workExperience.length > 0 ? state.workExperience : [newEntry()]
   );
@@ -46,9 +48,14 @@ export default function Step3WorkHistory() {
   const requestAI = async (id: string) => {
     setAiTarget(id);
     setAiLoading(true);
-    const bullets = await getAIBulletPoints(state.jobDescription, []);
-    setAiBullets(bullets);
-    setAiLoading(false);
+    try {
+      const response = await getAIBulletPoints(state.jobDescription, []);
+      setAiBullets(response.items);
+    } catch (error) {
+      console.error('Failed to get AI suggestions:', error);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const acceptBullet = (id: string, bullet: string) => {
@@ -239,6 +246,44 @@ export default function Step3WorkHistory() {
           </div>
         ))}
       </div>
+
+      {/* Suggestions from past CVs */}
+      {suggestions.workExperiences.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-4 rounded-lg border border-primary/20 bg-mint-50"
+        >
+          <div className="flex items-start gap-2 mb-3">
+            <Sparkles className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-900">Relevant Work Experience</p>
+              <p className="text-xs text-gray-600 mt-1">Select past roles that match this job target. Click to add them quickly.</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {suggestions.workExperiences.slice(0, 3).map((exp, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setEntries((prev) => [...prev, {
+                    id: Date.now().toString() + idx,
+                    position: exp.position,
+                    company: exp.company,
+                    startDate: exp.startDate,
+                    endDate: exp.endDate,
+                    responsibilities: exp.responsibilities,
+                  }]);
+                }}
+                className="w-full text-left p-2 rounded-lg bg-white hover:bg-gray-50 transition-colors border border-gray-200"
+              >
+                <p className="text-sm font-medium text-gray-900">{exp.position}</p>
+                <p className="text-xs text-gray-600">{exp.company}</p>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <button
         onClick={() => setEntries((prev) => [...prev, newEntry()])}
