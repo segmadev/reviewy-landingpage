@@ -1,5 +1,6 @@
 // API Configuration
-const isProduction = import.meta.env.PROD;
+// const isProduction = import.meta.env.PROD;
+const isProduction = true;
 
 export const API_CONFIG = {
   // In development, use relative URLs for Vite proxy
