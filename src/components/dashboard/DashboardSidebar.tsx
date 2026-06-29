@@ -8,19 +8,28 @@ const navItems = [
   { label: 'Templates',     href: '/dashboard/templates', icon: Layers          },
 ];
 
-export default function DashboardSidebar() {
+interface DashboardSidebarProps {
+  isMobile?: boolean;
+  onItemClick?: () => void;
+}
+
+export default function DashboardSidebar({ isMobile = false, onItemClick }: DashboardSidebarProps) {
   const location = useLocation();
   const navigate  = useNavigate();
   const { user, logout } = useAuth();
 
   const handleLogout = () => { logout(); navigate('/auth/login'); };
+  const handleNavigate = (path: string) => {
+    onItemClick?.();
+    navigate(path);
+  };
 
   const initials = (user?.fullName ?? 'U')
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <aside
-      className="hidden sm:flex w-64 shrink-0 flex-col h-screen sticky top-0 overflow-hidden border-r border-gray-100"
+      className={`${isMobile ? 'flex' : 'hidden sm:flex'} w-64 shrink-0 flex-col ${isMobile ? 'h-full' : 'h-screen sticky top-0'} overflow-hidden border-r border-gray-100`}
       style={{ backgroundColor: '#FAFBF9' }}
     >
       {/* Logo */}
@@ -54,9 +63,9 @@ export default function DashboardSidebar() {
             const active = location.pathname === href || location.pathname.startsWith(href + '/');
             return (
               <li key={href}>
-                <Link
-                  to={href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigate(href)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-left ${
                     active
                       ? 'text-[#58AF24]'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -65,7 +74,7 @@ export default function DashboardSidebar() {
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   {label}
-                </Link>
+                </button>
               </li>
             );
           })}
@@ -73,9 +82,9 @@ export default function DashboardSidebar() {
 
         <div className="mt-6">
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">Account</p>
-          <Link
-            to="/dashboard/account"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium ${
+          <button
+            onClick={() => handleNavigate('/dashboard/account')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-left ${
               location.pathname === '/dashboard/account'
                 ? 'text-[#58AF24]'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -84,7 +93,7 @@ export default function DashboardSidebar() {
           >
             <User className="w-4 h-4 shrink-0" />
             Profile
-          </Link>
+          </button>
         </div>
       </nav>
 

@@ -74,16 +74,13 @@ export default function LoginPage() {
         console.warn('⚠ Profile fetch failed, waiting 3 seconds before redirect...');
       }
 
-      // Only show success if profile was fetched
       if (profileFetchSuccess) {
         success('Logged in successfully!');
       }
-
-      // Always redirect after login (even if profile fetch fails, user is authenticated)
+      // Redirect to dashboard after login
       setTimeout(() => {
-        console.log('→ Redirecting to dashboard...');
         navigate('/dashboard');
-      }, profileFetchSuccess ? 500 : 3000);
+      }, 500);
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed. Please try again.';

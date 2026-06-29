@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FilePlus, Edit3, Trash2, FileText, Eye, Copy,
-  MoreVertical, Check, X, Search, Calendar, Layers, ChevronLeft,
+  MoreVertical, Check, X, Search, Calendar, Layers, ChevronLeft, Menu,
 } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import CVPreview from '../../components/builder/CVPreview';
@@ -390,6 +390,7 @@ export default function DashboardPage() {
   const [previewCV,    setPreviewCV]    = useState<SavedCV | null>(null);
   const [search,       setSearch]       = useState('');
   const [mobileView,   setMobileView]   = useState<'list' | 'detail'>('list');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Hidden print/download ref (full-scale CV for the selected CV)
   const printRef = useRef<HTMLDivElement>(null);
@@ -482,28 +483,62 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F3F4F6' }}>
+      {/* Desktop Sidebar */}
       <DashboardSidebar />
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="sm:hidden fixed inset-0 bg-black/50 z-40"
+            />
+            <motion.div
+              initial={{ x: -256 }}
+              animate={{ x: 0 }}
+              exit={{ x: -256 }}
+              className="sm:hidden fixed top-0 left-0 h-screen w-64 z-50"
+              style={{ backgroundColor: '#FAFBF9' }}
+            >
+              <DashboardSidebar isMobile onItemClick={() => setMobileMenuOpen(false)} />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <main className="flex-1 overflow-y-auto">
         <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 space-y-4 sm:space-y-6 max-w-[1280px] mx-auto w-full">
 
           {/* ── Header ───────────────────────────────────────────── */}
           <div className="flex flex-col gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Welcome back, {firstName} 👋</h1>
-              <p className="text-gray-500 text-xs sm:text-sm mt-1 sm:mt-0.5">
-                {cvs.length === 0
-                  ? 'Create your first CV to get started'
-                  : `You have ${cvs.length} CV${cvs.length !== 1 ? 's' : ''}`}
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Welcome back, {firstName} 👋</h1>
+                <p className="text-gray-500 text-xs sm:text-sm mt-1 sm:mt-0.5">
+                  {cvs.length === 0
+                    ? 'Create your first CV to get started'
+                    : `You have ${cvs.length} CV${cvs.length !== 1 ? 's' : ''}`}
+                </p>
+              </div>
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="sm:hidden p-2 hover:bg-white rounded-lg transition-colors shrink-0 mt-1"
+              >
+                <Menu className="w-6 h-6 text-gray-600" />
+              </button>
             </div>
             <button
               onClick={handleCreateNew}
-              className="flex items-center justify-center sm:justify-start gap-2 text-white font-semibold px-4 sm:px-5 py-3 sm:py-2.5 rounded-xl text-sm shrink-0 hover:opacity-90 transition-opacity w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 text-white font-semibold px-4 py-2 rounded-lg text-sm shrink-0 hover:opacity-90 transition-opacity w-auto"
               style={{ background: '#68AE24', boxShadow: '0 4px 14px rgba(104,174,36,0.3)' }}
             >
               <FilePlus className="w-4 h-4" />
-              <span className="sm:inline">New CV</span>
+              New CV
             </button>
           </div>
 

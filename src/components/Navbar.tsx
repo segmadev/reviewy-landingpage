@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut, User, Settings, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [authState, setAuthState] = useState({ isAuthenticated: false, user: null as any });
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
   const isLanding = location.pathname === '/';
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync auth state from context
   useEffect(() => {
@@ -24,6 +26,39 @@ const Navbar: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!profileDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileDropdownOpen]);
+
+  // Helper function to get display name (up to 10 chars)
+  const getDisplayName = (user: any): string => {
+    const firstName = user.firstName || user.fullName?.split(' ')[0] || '';
+    const lastName = user.lastName || user.fullName?.split(' ')[1] || '';
+
+    if (firstName.length >= 10) {
+      return firstName.substring(0, 10) + '...';
+    }
+
+    if (firstName && lastName) {
+      const combined = `${firstName} ${lastName}`;
+      if (combined.length <= 10) {
+        return combined;
+      }
+      const truncated = `${firstName} ${lastName.substring(0, 10 - firstName.length - 1)}`;
+      return truncated + '...';
+    }
+
+    return firstName || 'User';
+  };
 
   const navLinks = [
     { label: 'How It Works', href: isLanding ? '#how-it-works' : '/#how-it-works' },
@@ -71,27 +106,101 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Right Buttons — desktop */}
-        <div className="hidden md:flex items-center space-x-3">
+        <div className="hidden md:flex items-center gap-4">
           {authState.isAuthenticated && authState.user ? (
             <>
-              <span className="text-gray-600 font-medium">
-                Welcome, {authState.user.fullName?.split(' ')[0] || authState.user.email}
-              </span>
-              <Button size="md" onClick={() => navigate('/dashboard')}>
-                Dashboard
-              </Button>
-              <Button
-                variant="ghost"
-                size="md"
-                onClick={async () => {
-                  await logout();
-                  navigate('/');
-                }}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </Button>
+              {/* User Profile Dropdown */}
+              <div className="relative" ref={profileDropdownRef}>
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                    style={{ backgroundColor: '#68AE24' }}
+                  >
+                    {(authState.user.firstName?.[0] || authState.user.fullName?.[0] || 'U').toUpperCase()}
+                  </div>
+                  <div className="hidden lg:flex flex-col items-start">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {getDisplayName(authState.user)}
+                    </p>
+                    <p className="text-xs text-gray-500">Account</p>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </button>
+
+                {/* Dropdown Menu */}
+                <AnimatePresence>
+                  {profileDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-300 z-50 overflow-hidden"
+                    >
+                      {/* User Info */}
+                      <div className="px-6 py-4 border-b border-gray-200">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {getDisplayName(authState.user)}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate mt-1">
+                          {authState.user.email}
+                        </p>
+                      </div>
+
+                      {/* Menu Items */}
+                      <div className="py-1 space-y-1">
+                        <button
+                          onClick={() => {
+                            navigate('/dashboard');
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-6 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-md mx-1"
+                        >
+                          <LayoutDashboard className="w-4 h-4" />
+                          Dashboard
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/dashboard/account');
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-6 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-md mx-1"
+                        >
+                          <User className="w-4 h-4" />
+                          Profile
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/dashboard/account');
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-6 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-md mx-1"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Settings
+                        </button>
+                      </div>
+
+                      {/* Logout */}
+                      <div className="border-t border-gray-200">
+                        <button
+                          onClick={async () => {
+                            await logout();
+                            setProfileDropdownOpen(false);
+                            navigate('/');
+                          }}
+                          className="w-full flex items-center gap-3 px-6 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </>
           ) : (
             <>
@@ -150,8 +259,9 @@ const Navbar: React.FC = () => {
                 {authState.isAuthenticated && authState.user ? (
                   <>
                     <div className="px-2 py-2">
-                      <p className="text-sm font-medium text-gray-900">
-                        Welcome, {authState.user.fullName?.split(' ')[0] || authState.user.email}
+                      <p className="text-xs text-gray-500">Logged in as</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {authState.user.firstName || authState.user.fullName?.split(' ')[0] || authState.user.email}
                       </p>
                     </div>
                     <Button size="md" className="w-full" onClick={() => { navigate('/dashboard'); setMobileOpen(false); }}>

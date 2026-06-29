@@ -59,33 +59,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   });
 
-  const login = useCallback((accessToken: string, refreshToken: string, user: User) => {
-    // Ensure valid data before storing
-    if (accessToken && refreshToken && user) {
+  const login = useCallback((accessToken: string, refreshToken: string, user?: User) => {
+    // Store tokens even if user is missing - we'll fetch it separately
+    if (accessToken && refreshToken) {
       console.log('[AuthContext] Storing tokens:');
       console.log('  - accessToken:', accessToken.substring(0, 50) + '...');
       console.log('  - refreshToken:', refreshToken.substring(0, 50) + '...');
-      console.log('  - user:', user.email);
+      if (user) {
+        console.log('  - user:', user.email);
+      } else {
+        console.warn('  - user: not provided by API, will fetch separately');
+      }
 
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      if (user) {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      }
 
-      console.log('[AuthContext] Tokens stored in localStorage');
+      console.log('[AuthContext] ✓ Tokens stored in localStorage');
       console.log('  - rym_access_token:', localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)?.substring(0, 50) + '...');
 
       setState({
         accessToken,
         refreshToken,
-        user,
+        user: user || null,
         isAuthenticated: true,
         isLoading: false,
       });
     } else {
-      console.error('[AuthContext] ✗ Missing required data for login:', {
+      console.error('[AuthContext] ✗ Missing required tokens for login:', {
         hasToken: !!accessToken,
         hasRefresh: !!refreshToken,
-        hasUser: !!user
       });
     }
   }, []);

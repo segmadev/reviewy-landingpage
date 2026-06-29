@@ -84,12 +84,17 @@ export default function AccountPage() {
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<Tab>('personal');
 
+  // Build fullName from firstName + lastName, or fallback to fullName if available
+  const userFullName: string = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.fullName || '' : '';
+  const userPhone: string = user?.phoneNumber ?? '';
+  const userLocation: string = user?.address ? `${user.address.city || ''}${user.address.county ? ', ' + user.address.county : ''}${user.address.country ? ', ' + user.address.country : ''}`.trim() : '';
+
   // Personal form
-  const [fullName, setFullName] = useState(user?.fullName ?? '');
-  const [email,    setEmail]    = useState(user?.email ?? '');
-  const [phone,    setPhone]    = useState('');
-  const [location, setLocation] = useState('');
-  const [bio,      setBio]      = useState('');
+  const [fullName, setFullName] = useState<string>(userFullName);
+  const [email,    setEmail]    = useState<string>(user?.email ?? '');
+  const [phone,    setPhone]    = useState<string>(userPhone);
+  const [location, setLocation] = useState<string>(userLocation);
+  const [bio,      setBio]      = useState<string>('');
 
   // Security form
   const [currentPw,  setCurrentPw]  = useState('');
@@ -127,7 +132,7 @@ export default function AccountPage() {
     logout();
   };
 
-  const initials = (user?.fullName ?? 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const initials = (userFullName || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#F3F4F6' }}>
@@ -162,7 +167,7 @@ export default function AccountPage() {
 
             {/* Info */}
             <div className="flex-1 min-w-0 text-center sm:text-left">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{user?.fullName ?? 'Job Seeker'}</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{userFullName || 'Job Seeker'}</h1>
               <p className="text-xs sm:text-sm text-gray-400 mt-1 truncate">{user?.email ?? ''}</p>
             </div>
 

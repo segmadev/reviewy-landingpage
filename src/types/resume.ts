@@ -54,11 +54,26 @@ export interface ResumeData {
   hobbies?: string[];
 }
 
+export interface UserAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  county?: string;
+  postcode: string;
+  country: string;
+}
+
 export interface User {
   id: string;
   email: string;
-  fullName: string;
-  role: 'jobseeker' | 'recruiter';
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  address?: UserAddress;
+  isExpert?: boolean;
+  expertDetails?: unknown;
+  role?: 'jobseeker' | 'recruiter';
   avatarUrl?: string;
 }
 
