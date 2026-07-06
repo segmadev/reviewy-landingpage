@@ -8,16 +8,17 @@ import DashboardPage           from './pages/dashboard/DashboardPage';
 import AccountPage             from './pages/dashboard/AccountPage';
 import DashboardTemplatesPage  from './pages/dashboard/DashboardTemplatesPage';
 import CheckoutPage            from './pages/checkout/CheckoutPage';
+import { ProtectedRoute }      from './components/ProtectedRoute';
 
 const router = createBrowserRouter([
   { path: '/',                      element: <LandingPage />            },
   { path: '/auth/login',            element: <LoginPage />              },
-  { path: '/builder',               element: <BuilderPage />            },
-  { path: '/builder/template',      element: <ChooseTemplatePage />     },
-  { path: '/builder/result',        element: <BuilderResultPage />      },
-  { path: '/dashboard',             element: <DashboardPage />          },
-  { path: '/dashboard/account',     element: <AccountPage />            },
-  { path: '/dashboard/templates',   element: <DashboardTemplatesPage /> },
+  { path: '/builder/template',      element: <ProtectedRoute><ChooseTemplatePage /></ProtectedRoute>     },
+  { path: '/builder/result',        element: <ProtectedRoute><BuilderResultPage /></ProtectedRoute>      },
+  { path: '/builder/:id?',          element: <ProtectedRoute><BuilderPage /></ProtectedRoute>            },
+  { path: '/dashboard',             element: <ProtectedRoute><DashboardPage /></ProtectedRoute>          },
+  { path: '/dashboard/account',     element: <ProtectedRoute><AccountPage /></ProtectedRoute>            },
+  { path: '/dashboard/templates',   element: <ProtectedRoute><DashboardTemplatesPage /></ProtectedRoute> },
   { path: '/checkout',              element: <CheckoutPage />           },
   { path: '*',                      element: <LandingPage />            },
 ]);

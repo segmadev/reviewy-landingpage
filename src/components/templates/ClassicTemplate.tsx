@@ -47,7 +47,7 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
           {[contactDetails?.address, contactDetails?.phone, contactDetails?.email,
             linkedinProfile?.replace('https://', ''), portfolioLinks?.[0]?.replace('https://', '')]
             .filter(Boolean).map((item, i, arr) => (
-              <span key={i}>{item}{i < arr.length - 1 ? ' ·' : ''}</span>
+              <span key={String(item)}>{item}{i < arr.length - 1 ? ' ·' : ''}</span>
             ))}
         </div>
       </div>
@@ -69,8 +69,8 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
               </div>
               {exp.responsibilities?.length > 0 && (
                 <ul style={{ paddingLeft: `${14 * s}px`, marginTop: `${2 * s}px` }}>
-                  {exp.responsibilities.map((r, i) => (
-                    <li key={i} style={{ fontSize: `${8.5 * s}px`, color: '#374151', marginBottom: `${1 * s}px`, listStyleType: 'disc' }}>{r}</li>
+                  {exp.responsibilities.map((r) => (
+                    <li key={String(r)} style={{ fontSize: `${8.5 * s}px`, color: '#374151', marginBottom: `${1 * s}px`, listStyleType: 'disc' }}>{r}</li>
                   ))}
                 </ul>
               )}
@@ -97,7 +97,7 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
 
       {skills?.length ? (<><Divider title="Skills" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: `${2 * s}px ${10 * s}px`, fontSize: `${8.5 * s}px` }}>
-          {skills.map((sk, i) => <div key={i} style={{ color: '#374151' }}><span style={{ color: accent }}>▪</span> {sk}</div>)}
+          {skills.map((sk) => <div key={sk} style={{ color: '#374151' }}><span style={{ color: accent }}>▪</span> {sk}</div>)}
         </div>
       </>) : null}
 
@@ -115,13 +115,13 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
 
       {languages?.length ? (<><Divider title="Languages" />
         <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: `${6 * s}px`, fontSize: `${8.5 * s}px`, color: '#374151' }}>
-          {languages.map((l, i) => <span key={i}><span style={{ color: accent }}>▪</span> {l}</span>)}
+          {languages.map((l) => <span key={l}><span style={{ color: accent }}>▪</span> {l}</span>)}
         </div>
       </>) : null}
 
       {awards?.length ? (<><Divider title="Awards" />
         <div style={{ fontSize: `${8.5 * s}px`, color: '#374151' }}>
-          {awards.map((a, i) => <div key={i}><span style={{ color: accent }}>▪</span> {a}</div>)}
+          {awards.map((a) => <div key={a}><span style={{ color: accent }}>▪</span> {a}</div>)}
         </div>
       </>) : null}
 

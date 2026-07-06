@@ -2,7 +2,10 @@ import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import HowItWorks from '../components/HowItWorks';
 import WhyReviewyMe from '../components/WhyReviewyMe';
+import WhatYouGet from '../components/WhatYouGet';
+import Comparison from '../components/Comparison';
 import Testimonials from '../components/Testimonials';
+import ClosingCTA from '../components/ClosingCTA';
 import Footer from '../components/Footer';
 
 export default function LandingPage() {
@@ -13,9 +16,10 @@ export default function LandingPage() {
         <Hero />
         <div id="how-it-works"><HowItWorks /></div>
         <div id="why-us"><WhyReviewyMe /></div>
-        {/* <CVInMotion /> */}
-        {/* <KeyFeatures /> */}
+        <WhatYouGet />
+        <Comparison />
         <div id="testimonials"><Testimonials /></div>
+        <ClosingCTA />
       </main>
       <Footer />
     </div>

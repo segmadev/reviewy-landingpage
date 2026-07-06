@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, Eye, EyeOff, Save, Trash2, Lock, User } from 'lucide-react';
+import { Camera, Eye, EyeOff, Save, Trash2, Lock, User, Menu, X } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { updateProfile, changePassword, deleteAccount } from '../../services/api';
@@ -81,8 +82,10 @@ function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
 
 // ── Account Page ──────────────────────────────────────────────────────────────
 export default function AccountPage() {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [tab, setTab] = useState<Tab>('personal');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Build fullName from firstName + lastName, or fallback to fullName if available
   const userFullName: string = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.fullName || '' : '';
@@ -138,8 +141,41 @@ export default function AccountPage() {
     <div className="flex h-screen overflow-hidden" style={{ background: '#F3F4F6' }}>
       <DashboardSidebar />
 
+      {/* Mobile Sidebar */}
+      {mobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+        />
+      )}
+      <motion.div
+        initial={{ x: '-100%' }}
+        animate={{ x: mobileMenuOpen ? 0 : '-100%' }}
+        transition={{ duration: 0.3 }}
+        className="fixed left-0 top-0 h-full z-50 sm:hidden"
+      >
+        <DashboardSidebar isMobile={true} onItemClick={() => setMobileMenuOpen(false)} />
+      </motion.div>
+
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 w-full">
+          {/* Mobile Menu Button */}
+          <div className="flex sm:hidden items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Account Settings</h2>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 text-gray-900" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-900" />
+              )}
+            </button>
+          </div>
 
           {/* ── Profile header card ────────────────────── */}
           <motion.div
@@ -257,12 +293,7 @@ export default function AccountPage() {
               {/* Cancel / Save */}
               <div className="flex gap-3 sm:ml-auto">
                 <button
-                  onClick={() => {
-                    setFullName(user?.fullName ?? '');
-                    setEmail(user?.email ?? '');
-                    setPhone(''); setLocation(''); setBio('');
-                    setCurrentPw(''); setNewPw(''); setConfirmPw('');
-                  }}
+                  onClick={() => navigate(-1)}
                   className="px-5 py-2.5 rounded-lg text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100"
                   style={{ background: '#F7F8F6', border: '1.5px solid #E5E7EB' }}
                 >

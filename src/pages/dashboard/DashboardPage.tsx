@@ -435,7 +435,7 @@ export default function DashboardPage() {
   const handleEdit = (cv: SavedCV) => {
     dispatch({ type: 'LOAD_CV', payload: cv });
     setActiveCV(cv.id);
-    navigate('/builder');
+    navigate(`/builder/${cv.id}`);
   };
 
   const handleChangeTemplate = (cv: SavedCV) => {

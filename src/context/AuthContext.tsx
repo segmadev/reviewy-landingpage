@@ -13,7 +13,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (accessToken: string, refreshToken: string, user: User) => void;
+  login: (accessToken: string, refreshToken: string, user?: User) => void;
   logout: () => Promise<void>;
   fetchProfile: (token?: string) => Promise<void>;
 }

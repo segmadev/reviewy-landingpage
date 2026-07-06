@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Sparkles, Check, X } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Check, X, AlertCircle } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
+import { useToast } from '../../../context/ToastContext';
 import { getAIBulletPoints } from '../../../services/api';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import type { WorkExperience } from '../../../types/resume';
@@ -14,6 +15,7 @@ function newEntry(): WorkExperience {
 export default function Step3WorkHistory() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
   const { suggestions } = useCVSuggestions();
+  const { error: showError } = useToast();
   const [entries, setEntries] = useState<WorkExperience[]>(
     state.workExperience.length > 0 ? state.workExperience : [newEntry()]
   );
@@ -68,7 +70,29 @@ export default function Step3WorkHistory() {
   };
 
   const handleNext = () => {
-    dispatch({ type: 'SET_WORK_EXPERIENCE', payload: entries });
+    // Validate positions: if job title is filled, require company and achievements
+    const errors: string[] = [];
+    entries.forEach((entry, idx) => {
+      const posIdx = idx + 1;
+      const hasPosition = entry.position?.trim().length > 0;
+      const hasCompany = entry.company?.trim().length > 0;
+      const hasResponsibilities = entry.responsibilities.some((r) => r?.trim().length > 0);
+
+      // Only validate if job title is filled (incomplete entries are skipped)
+      if (hasPosition) {
+        if (!hasCompany) errors.push(`Position ${posIdx}: Employer & Location is required`);
+        if (!hasResponsibilities) errors.push(`Position ${posIdx}: At least one Key Achievement/Responsibility is required`);
+      }
+    });
+
+    if (errors.length > 0) {
+      showError('Please complete all required fields in each position');
+      return;
+    }
+
+    // Filter out empty entries (no job title) before storing
+    const cleanedEntries = entries.filter((exp) => exp.position && exp.position.trim().length > 0);
+    dispatch({ type: 'SET_WORK_EXPERIENCE', payload: cleanedEntries });
     nextStep();
   };
 
@@ -84,12 +108,34 @@ export default function Step3WorkHistory() {
       <p className="text-gray-500 text-sm leading-relaxed mb-6">Add your most recent positions first.</p>
 
       <div className="space-y-6">
-        {entries.map((entry, entryIdx) => (
-          <div key={entry.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+        {entries.map((entry, entryIdx) => {
+          const hasPosition = entry.position?.trim().length > 0;
+          const hasCompany = entry.company?.trim().length > 0;
+          const hasResponsibilities = entry.responsibilities.some((r) => r?.trim().length > 0);
+
+          // Show error only if job title is filled but achievements or company are missing
+          const isInvalid = hasPosition && (!hasCompany || !hasResponsibilities);
+          const borderColor = isInvalid ? 'border-red-200' : 'border-gray-100';
+          const bgColor = isInvalid ? 'bg-red-50/50' : 'bg-gray-50';
+
+          return (
+          <div key={entry.id} className={`rounded-xl p-4 border ${borderColor} ${bgColor} transition-colors`}>
             <div className="flex justify-between items-start mb-3">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Position {entryIdx + 1}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Position {entryIdx + 1}
+                </span>
+                {isInvalid && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100"
+                  >
+                    <AlertCircle className="w-3 h-3 text-red-600" />
+                    <span className="text-[10px] font-semibold text-red-600">Incomplete</span>
+                  </motion.div>
+                )}
+              </div>
               {entries.length > 1 && (
                 <button
                   onClick={() => setEntries((prev) => prev.filter((e) => e.id !== entry.id))}
@@ -144,7 +190,10 @@ export default function Step3WorkHistory() {
 
             {/* Responsibilities */}
             <div className="mb-3">
-              <label className="block text-xs font-medium text-gray-600 mb-2">Key Achievements / Responsibilities</label>
+              <label className="block text-xs font-medium text-gray-600 mb-2">
+                Key Achievements / Responsibilities
+                <span className="text-red-500 ml-1">*</span>
+              </label>
               <div className="space-y-2">
                 {entry.responsibilities.map((r, ri) => (
                   <div key={ri} className="flex gap-2 items-start">
@@ -244,7 +293,8 @@ export default function Step3WorkHistory() {
               )}
             </AnimatePresence>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Suggestions from past CVs */}

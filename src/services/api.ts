@@ -16,27 +16,19 @@ export interface SignupData {
   lastName: string;
   email: string;
   password: string;
-  phoneNumber: string;
-  address: {
-    line1: string;
-    line2?: string;
-    city: string;
-    county: string;
-    postcode: string;
-    country: string;
-  };
 }
 
-export async function registerUser(data: SignupData): Promise<AuthResponse> {
+export async function registerUser(data: SignupData): Promise<{ accessToken: string; refreshToken: string; tokenType: string }> {
   try {
     const response = (await http.post(ENDPOINTS.SIGNUP, data)) as {
       accessToken: string;
       refreshToken: string;
-      user: User;
+      tokenType: string;
     };
     return {
-      token: response.accessToken,
-      user: response.user,
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      tokenType: response.tokenType,
     };
   } catch (error) {
     if (error instanceof HttpError) {

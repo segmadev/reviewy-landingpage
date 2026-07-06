@@ -30,15 +30,6 @@ export default function LoginPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    phoneNumber: '',
-    address: {
-      line1: '',
-      line2: '',
-      city: '',
-      county: '',
-      postcode: '',
-      country: 'United Kingdom',
-    },
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -105,13 +96,6 @@ export default function LoginPage() {
       return;
     }
 
-    if (!signupForm.address.line1 || !signupForm.address.city || !signupForm.address.postcode) {
-      const msg = 'Please fill in all address fields.';
-      setError(msg);
-      showError(msg);
-      return;
-    }
-
     setLoading(true);
     try {
       const signupData: SignupData = {
@@ -119,25 +103,31 @@ export default function LoginPage() {
         lastName: signupForm.lastName,
         email: signupForm.email,
         password: signupForm.password,
-        phoneNumber: signupForm.phoneNumber,
-        address: {
-          line1: signupForm.address.line1,
-          line2: signupForm.address.line2 || '',
-          city: signupForm.address.city,
-          county: signupForm.address.county || '',
-          postcode: signupForm.address.postcode,
-          country: signupForm.address.country,
-        },
       };
 
       const res = await registerUser(signupData);
-      login(res.token, res.token, res.user);
+      console.log('✓ Signup successful, tokens received');
+
+      // Store tokens and update auth state (user will be fetched separately)
+      login(res.accessToken, res.refreshToken, undefined);
+      console.log('✓ Tokens stored');
 
       // Fetch complete profile after signup - pass token directly
-      await fetchProfile(res.token);
+      console.log('→ Fetching complete profile...');
+      try {
+        await fetchProfile(res.accessToken);
+        console.log('✓ Profile fetched successfully');
+      } catch (profileErr) {
+        const profileErrMsg = profileErr instanceof Error ? profileErr.message : 'Failed to fetch profile';
+        console.error('✗ PROFILE FETCH ERROR:', profileErrMsg);
+        // Continue anyway - user can fill in profile details later
+      }
 
       success('Account created successfully!');
-      navigate('/dashboard');
+      // Redirect to dashboard
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed. Please try again.';
       setError(message);
@@ -177,7 +167,7 @@ export default function LoginPage() {
 
           {isSignup ? (
             // SIGNUP FORM
-            <form onSubmit={handleSignup} className="space-y-3">
+            <form onSubmit={handleSignup} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -223,103 +213,45 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="+447911123456"
-                  value={signupForm.phoneNumber}
-                  onChange={(e) => setSignupForm({ ...signupForm, phoneNumber: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={signupForm.password}
+                    onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
+                    className="w-full pl-10 pr-10 py-2.5 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="42 Kensington High Street"
-                  value={signupForm.address.line1}
-                  onChange={(e) =>
-                    setSignupForm({
-                      ...signupForm,
-                      address: { ...signupForm.address, line1: e.target.value },
-                    })
-                  }
-                  className="w-full px-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
-                    type="text"
+                    type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="London"
-                    value={signupForm.address.city}
-                    onChange={(e) =>
-                      setSignupForm({
-                        ...signupForm,
-                        address: { ...signupForm.address, city: e.target.value },
-                      })
-                    }
-                    className="w-full px-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
+                    placeholder="••••••••"
+                    value={signupForm.confirmPassword}
+                    onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Postcode</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="W8 4PT"
-                    value={signupForm.address.postcode}
-                    onChange={(e) =>
-                      setSignupForm({
-                        ...signupForm,
-                        address: { ...signupForm.address, postcode: e.target.value },
-                      })
-                    }
-                    className="w-full px-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      placeholder="••••••••"
-                      value={signupForm.password}
-                      onChange={(e) =>
-                        setSignupForm({ ...signupForm, password: e.target.value })
-                      }
-                      className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      placeholder="••••••••"
-                      value={signupForm.confirmPassword}
-                      onChange={(e) =>
-                        setSignupForm({ ...signupForm, confirmPassword: e.target.value })
-                      }
-                      className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-                    />
-                  </div>
                 </div>
               </div>
 
@@ -331,20 +263,6 @@ export default function LoginPage() {
               >
                 {loading ? 'Creating Account...' : 'Create Account'}
               </Button>
-
-              <p className="text-center text-sm text-gray-600 mt-3">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSignup(false);
-                    setError('');
-                  }}
-                  className="text-primary font-medium hover:underline"
-                >
-                  Sign in
-                </button>
-              </p>
             </form>
           ) : (
             // LOGIN FORM

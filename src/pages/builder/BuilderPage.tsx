@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Eye, EyeOff, SlidersHorizontal, Expand, ChevronLeft, X,
@@ -19,7 +19,7 @@ import Step4Education from '../../components/builder/steps/Step4Education';
 import Step5Skills from '../../components/builder/steps/Step5Skills';
 import Step6Summary from '../../components/builder/steps/Step6Summary';
 import Step7Additional from '../../components/builder/steps/Step7Additional';
-import { submitCV } from '../../services/api';
+import { submitCV, getResumeById } from '../../services/api';
 import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useToast } from '../../context/ToastContext';
@@ -84,6 +84,7 @@ function BottomSheet({
 
 function BuilderInner() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
   const { state, dispatch, prevStep, nextStep, goToStep } = useBuilder();
   useAutoSave();
   const { success, error: showError } = useToast();
@@ -92,6 +93,26 @@ function BuilderInner() {
   const [showModal,      setShowModal]      = useState(false);
   const [showSteps,      setShowSteps]      = useState(false);
   const [showDesign,     setShowDesign]     = useState(false);
+  const [isLoadingCV,    setIsLoadingCV]    = useState(false);
+
+  // Load CV from backend using URL parameter if provided
+  useEffect(() => {
+    if (id && id !== state.submittedCvId) {
+      const loadCV = async () => {
+        setIsLoadingCV(true);
+        try {
+          const cv = await getResumeById(id);
+          dispatch({ type: 'LOAD_CV', payload: cv });
+        } catch (error) {
+          console.error('Failed to load CV:', error);
+          showError('Failed to load CV. Please try again.');
+        } finally {
+          setIsLoadingCV(false);
+        }
+      };
+      loadCV();
+    }
+  }, [id, state.submittedCvId, dispatch, showError]);
 
   const currentStep = state.currentStep;
 
@@ -106,10 +127,22 @@ function BuilderInner() {
   };
 
   const handleFinish = async () => {
+    // Only require job description for new CVs, not when editing existing ones
+    const isNewCV = !state.submittedCvId;
+    if (isNewCV && (!state.jobDescription || state.jobDescription.trim() === '')) {
+      showError('Please complete Step 1 (Job Targeting) before saving your CV');
+      return;
+    }
+
     dispatch({ type: 'SET_SUBMITTING', payload: true });
     try {
       // Get resume ID from localStorage (set by auto-save)
       const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
+
+      // Filter out empty work experience entries (entries without a job title)
+      const cleanedWorkExperience = state.workExperience.filter(
+        (exp) => exp.position && exp.position.trim().length > 0
+      );
 
       // Persist to local CV library
       const cvId = state.submittedCvId ?? resumeId ?? generateCVId();
@@ -128,7 +161,7 @@ function BuilderInner() {
         portfolioLinks: state.portfolioLinks,
         professionalSummary: state.professionalSummary,
         skills: state.skills,
-        workExperience: state.workExperience,
+        workExperience: cleanedWorkExperience,
         education: state.education,
         relevantCourseWork: state.relevantCourseWork,
         certifications: state.certifications,
@@ -144,8 +177,8 @@ function BuilderInner() {
       upsertCV(savedCV);
       clearActiveCV();
 
-      // Submit to backend with resume ID
-      await submitCV(resumeId, state as any);
+      // Submit to backend with cleaned work experience
+      await submitCV(resumeId, { ...state, workExperience: cleanedWorkExperience } as any);
 
       success('CV saved successfully!');
       dispatch({ type: 'SET_SUBMITTED', payload: cvId });
@@ -169,8 +202,23 @@ function BuilderInner() {
 
   const currentTemplateName = TEMPLATES.find(t => t.id === state.templateId)?.name ?? 'Classic';
 
+  // Loading overlay for CV fetch
+  const LoadingOverlay = isLoadingCV && (
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full"
+        />
+        <p className="text-sm font-medium text-gray-600">Loading your CV...</p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen overflow-hidden bg-white">
+      {LoadingOverlay}
       {/* Green sidebar (desktop only) */}
       <BuilderSidebar />
 

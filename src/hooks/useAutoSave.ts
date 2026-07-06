@@ -18,6 +18,10 @@ export function useAutoSave() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    // Don't autosave until Step 1 (Job Targeting) is complete (only for new CVs)
+    const isNewCV = !state.submittedCvId;
+    if (isNewCV && (!state.jobDescription || state.jobDescription.trim() === '')) return;
+
     // Create a hash of the current state to detect changes
     const stateHash = JSON.stringify({
       contactDetails: state.contactDetails,
