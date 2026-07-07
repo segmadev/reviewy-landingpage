@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
@@ -9,9 +9,10 @@ import { useToast } from '../../context/ToastContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, isAuthenticated, fetchProfile } = useAuth();
   const { success, error: showError } = useToast();
-  const [isSignup, setIsSignup] = useState(false);
+  const [isSignup, setIsSignup] = useState(searchParams.get('mode') === 'signup');
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {

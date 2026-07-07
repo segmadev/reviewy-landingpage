@@ -42,8 +42,8 @@ const Comparison: React.FC = () => {
         viewport={{ once: true }}
         className="text-center mb-12"
       >
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Reviewme vs The Rest</h2>
-        <p className="text-lg text-gray-600">Why Reviewme is built differently</p>
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">ReviewYme vs The Rest</h2>
+        <p className="text-lg text-gray-600">Why ReviewYme is built differently</p>
       </motion.div>
 
       <div className="overflow-x-auto">
@@ -52,7 +52,7 @@ const Comparison: React.FC = () => {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="text-left py-4 px-6 font-semibold text-gray-600">Other tools</th>
-                <th className="text-left py-4 px-6 font-semibold text-primary">Reviewme</th>
+                <th className="text-left py-4 px-6 font-semibold text-primary">ReviewYme</th>
               </tr>
             </thead>
             <tbody>
@@ -105,9 +105,9 @@ const Comparison: React.FC = () => {
                 </div>
               </div>
 
-              {/* Reviewme Section */}
+              {/* ReviewYme Section */}
               <div className="bg-white p-3">
-                <div className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">Reviewme</div>
+                <div className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">ReviewYme</div>
                 <div className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <span className="text-sm font-medium text-gray-700">{row.reviewme}</span>

@@ -39,7 +39,7 @@ const UKFocused: React.FC = () => {
             <span className="text-primary"> Not any market.</span>
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Most CV tools were built for the US. Reviewme was built for British job seekers — with the language, conventions, and standards that UK recruiters and ATS systems actually expect.
+            Most CV tools were built for the US. ReviewYme was built for British job seekers — with the language, conventions, and standards that UK recruiters and ATS systems actually expect.
           </p>
         </motion.div>
 

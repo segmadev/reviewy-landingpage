@@ -19,7 +19,7 @@ const ClosingCTA: React.FC = () => {
         >
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
             Most CV tools were designed to look impressive.
-            <span className="block text-primary">Reviewme was designed to get you hired.</span>
+            <span className="block text-primary">ReviewYme was designed to get you hired.</span>
           </h2>
 
           <p className="text-lg text-gray-600 mb-10 max-w-2xl mx-auto">

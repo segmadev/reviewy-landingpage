@@ -1,10 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/Button';
 
 const Hero: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <section className="relative pt-32 pb-16 lg:pt-48 lg:pb-12 overflow-hidden">
@@ -26,10 +28,19 @@ const Hero: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Button size="lg" onClick={() => navigate('/builder')} className="px-8 py-4 text-base font-semibold">
+              <Button
+                size="lg"
+                onClick={() => navigate(isAuthenticated ? '/builder' : '/auth/login?mode=signup')}
+                className="px-8 py-4 text-base font-semibold"
+              >
                 Start Building My CV
               </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/auth/login')} className="px-8 py-4 text-base font-semibold">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate('/auth/login')}
+                className="px-8 py-4 text-base font-semibold"
+              >
                 Already have a CV? Login
               </Button>
             </div>

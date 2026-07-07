@@ -35,7 +35,7 @@ const WhyReviewyMe: React.FC = () => {
     {
       icon: Users,
       title: 'For Every Career Stage',
-      description: 'Graduate, career changer, or senior professional — Reviewme adapts to where you are and where you\'re going.',
+      description: 'Graduate, career changer, or senior professional — ReviewYme adapts to where you are and where you\'re going.',
     },
   ];
 
