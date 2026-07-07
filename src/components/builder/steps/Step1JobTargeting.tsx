@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useBuilder } from '../../../context/BuilderContext';
 
@@ -6,6 +6,11 @@ import { useBuilder } from '../../../context/BuilderContext';
 export default function Step1JobTargeting() {
   const { state, dispatch, nextStep } = useBuilder();
   const [value, setValue] = useState(state.jobDescription || '');
+
+  // Sync local state when global state changes (e.g., from auto-fill when editing)
+  useEffect(() => {
+    setValue(state.jobDescription || '');
+  }, [state.jobDescription]);
 
   const handleNext = () => {
     dispatch({ type: 'SET_JOB_DESCRIPTION', payload: value });

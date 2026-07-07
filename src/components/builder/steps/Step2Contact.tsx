@@ -3,12 +3,14 @@ import { motion } from 'framer-motion';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useToast } from '../../../context/ToastContext';
 import { getUserProfile } from '../../../services/api';
 import type { ContactDetails } from '../../../types/resume';
 
 export default function Step2Contact() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
   const { user } = useAuth();
+  const { error: showError } = useToast();
   const [contact, setContact] = useState<ContactDetails>({ ...state.contactDetails });
   const [linkedin, setLinkedin] = useState(state.linkedinProfile);
   const [portfolio, setPortfolio] = useState<string[]>([...state.portfolioLinks]);
@@ -31,6 +33,11 @@ export default function Step2Contact() {
   }, [user?.id]);
 
   const handleNext = () => {
+    if (!contact.fullName.trim() || !contact.email.trim() || !contact.phone.trim() || !contact.address.trim()) {
+      showError('Please fill in all contact details (Name, Email, Phone, Address)');
+      return;
+    }
+
     dispatch({ type: 'SET_CONTACT', payload: contact });
     dispatch({ type: 'SET_LINKEDIN', payload: linkedin });
     dispatch({ type: 'SET_PORTFOLIO', payload: portfolio });

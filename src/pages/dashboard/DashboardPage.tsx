@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useBuilder } from '../../context/BuilderContext';
 import { useToast } from '../../context/ToastContext';
 import {
-  loadLibrary, deleteCV, duplicateCV, renameCV, setActiveCV,
+  loadLibrary, duplicateCV, renameCV, setActiveCV,
 } from '../../services/cvLibrary';
 import { getUserResumes, deleteResume } from '../../services/api';
 import type { SavedCV } from '../../types/resume';
@@ -385,6 +385,7 @@ export default function DashboardPage() {
   const { error: showError, success } = useToast();
 
   const [cvs,          setCVs]          = useState<SavedCV[]>([]);
+  const [isLoading,    setIsLoading]    = useState(true);
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedCV | null>(null);
   const [previewCV,    setPreviewCV]    = useState<SavedCV | null>(null);
@@ -405,10 +406,12 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
+    setIsLoading(true);
     getUserResumes()
       .then((backendCVs) => {
         setCVs(backendCVs);
         if (backendCVs.length > 0) setSelectedId(backendCVs[0].id);
+        setIsLoading(false);
       })
       .catch((error) => {
         console.error('Failed to load CVs:', error);
@@ -417,6 +420,7 @@ export default function DashboardPage() {
         setCVs(lib);
         if (lib.length > 0) setSelectedId(lib[0].id);
         showError('Failed to load CVs from server');
+        setIsLoading(false);
       });
   }, [isAuthenticated, showError]);
 
@@ -459,15 +463,14 @@ export default function DashboardPage() {
     try {
       // Delete from backend
       await deleteResume(deleteTarget.id);
-      // Delete from local storage
-      deleteCV(deleteTarget.id);
-      const updated = loadLibrary();
-      setCVs(updated);
-      if (selectedId === deleteTarget.id) setSelectedId(updated[0]?.id ?? null);
       success('CV deleted successfully');
+
+      // Reload page after short delay to ensure backend sync
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       showError('Failed to delete CV');
-    } finally {
       setDeleteTarget(null);
     }
   };
@@ -566,10 +569,44 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* ── Empty State ───────────────────────────────────────── */}
-          {cvs.length === 0 ? (
+          {/* ── Loading Skeleton ──────────────────────────────────── */}
+          {isLoading && (
+            <div className="space-y-6">
+              {/* Stats skeleton */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={`stat-skeleton-${i}`} className="h-24 bg-gray-200 rounded-lg animate-pulse" />
+                ))}
+              </div>
+
+              {/* Search bar skeleton */}
+              <div className="h-11 bg-gray-200 rounded-xl w-full sm:max-w-sm animate-pulse" />
+
+              {/* Two-column layout skeleton */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                {/* Left column - CV list skeleton */}
+                <div className="lg:col-span-2 space-y-3">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-32" />
+                  <div className="space-y-2 sm:space-y-3">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={`cv-skeleton-${i}`} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right column - CV preview skeleton */}
+                <div className="hidden lg:flex lg:col-span-3 flex-col">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-32 mb-4" />
+                  <div className="flex-1 bg-gray-100 rounded-2xl animate-pulse" style={{ minHeight: 440 }} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Empty State / Content ───────────────────────────────*/}
+          {!isLoading && cvs.length === 0 ? (
             <EmptyState onCreateNew={handleCreateNew} />
-          ) : (
+          ) : !isLoading && cvs.length > 0 ? (
             <>
               {/* ── Search ──────────────────────────────────────── */}
               {cvs.length > 2 && (
@@ -712,7 +749,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </main>
 

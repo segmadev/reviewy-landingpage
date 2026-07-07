@@ -4,6 +4,7 @@ import { Plus, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
+import { useToast } from '../../../context/ToastContext';
 import type { Education } from '../../../types/resume';
 
 const levels = ['Bachelors', 'Masters', 'Doctoral', 'HND / Diploma', 'A-Levels', 'Other'];
@@ -15,6 +16,7 @@ function newEntry(): Education {
 export default function Step4Education() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
   const { suggestions } = useCVSuggestions();
+  const { error: showError } = useToast();
   const [entries, setEntries] = useState<Education[]>(
     state.education.length > 0 ? state.education : [newEntry()]
   );
@@ -24,6 +26,12 @@ export default function Step4Education() {
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
 
   const handleNext = () => {
+    const incompleteEducation = entries.filter(e => !e.institution.trim() || !e.degree.trim() || !e.startDate.trim() || !e.endDate.trim());
+    if (incompleteEducation.length > 0) {
+      showError('Please fill in all education fields (Institution, Degree, Start Date, End Date) or delete incomplete entries');
+      return;
+    }
+
     dispatch({ type: 'SET_EDUCATION', payload: entries });
     nextStep();
   };

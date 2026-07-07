@@ -47,7 +47,7 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
           {[contactDetails?.address, contactDetails?.phone, contactDetails?.email,
             linkedinProfile?.replace('https://', ''), portfolioLinks?.[0]?.replace('https://', '')]
             .filter(Boolean).map((item, i, arr) => (
-              <span key={String(item)}>{item}{i < arr.length - 1 ? ' ·' : ''}</span>
+              <span key={`contact-${i}`}>{item}{i < arr.length - 1 ? ' ·' : ''}</span>
             ))}
         </div>
       </div>
@@ -69,8 +69,8 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
               </div>
               {exp.responsibilities?.length > 0 && (
                 <ul style={{ paddingLeft: `${14 * s}px`, marginTop: `${2 * s}px` }}>
-                  {exp.responsibilities.map((r) => (
-                    <li key={String(r)} style={{ fontSize: `${8.5 * s}px`, color: '#374151', marginBottom: `${1 * s}px`, listStyleType: 'disc' }}>{r}</li>
+                  {exp.responsibilities.map((r, idx) => (
+                    <li key={`resp-${idx}`} style={{ fontSize: `${8.5 * s}px`, color: '#374151', marginBottom: `${1 * s}px`, listStyleType: 'disc' }}>{r}</li>
                   ))}
                 </ul>
               )}

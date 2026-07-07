@@ -101,7 +101,7 @@ export default function DashboardSidebar({ isMobile = false, onItemClick }: Dash
       <div className="px-3 py-4 border-t border-gray-100 shrink-0">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-all text-sm font-medium"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-all text-sm font-medium"
         >
           <LogOut className="w-4 h-4 shrink-0" />
           Sign Out

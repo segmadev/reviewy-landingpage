@@ -127,6 +127,7 @@ export interface SavedCV {
   awards: string[];
   hobbies: string[];
   jobDescription: string;
+  jobUrl?: string;  // URL to the job posting, used when editing to auto-fill job description
   toggles: {
     languages: boolean;
     certifications: boolean;

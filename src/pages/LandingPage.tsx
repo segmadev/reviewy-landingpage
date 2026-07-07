@@ -1,5 +1,6 @@
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
+import UKFocused from '../components/UKFocused';
 import HowItWorks from '../components/HowItWorks';
 import WhyReviewyMe from '../components/WhyReviewyMe';
 import WhatYouGet from '../components/WhatYouGet';
@@ -14,6 +15,7 @@ export default function LandingPage() {
       <Navbar />
       <main>
         <Hero />
+        <UKFocused />
         <div id="how-it-works"><HowItWorks /></div>
         <div id="why-us"><WhyReviewyMe /></div>
         <WhatYouGet />

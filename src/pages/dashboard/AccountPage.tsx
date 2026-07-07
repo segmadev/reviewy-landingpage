@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, Eye, EyeOff, Save, Trash2, Lock, User, Menu, X } from 'lucide-react';
+import { Camera, Eye, EyeOff, Save, Lock, User, Menu, X, LogOut } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import { useAuth } from '../../context/AuthContext';
-import { updateProfile, changePassword, deleteAccount } from '../../services/api';
+import { updateProfile, changePassword } from '../../services/api';
 
 type Tab = 'personal' | 'security';
 
@@ -51,35 +51,6 @@ function Field({
   );
 }
 
-// ── Delete Confirm ────────────────────────────────────────────────────────────
-function DeleteModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full"
-      >
-        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-          <Trash2 className="w-6 h-6 text-red-500" />
-        </div>
-        <h3 className="text-base font-bold text-gray-900 text-center mb-1">Delete Account?</h3>
-        <p className="text-sm text-gray-500 text-center mb-6">
-          All your CVs and data will be permanently removed. This cannot be undone.
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-            Cancel
-          </button>
-          <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-opacity" style={{ background: '#DE350B' }}>
-            Delete Account
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 // ── Account Page ──────────────────────────────────────────────────────────────
 export default function AccountPage() {
   const navigate = useNavigate();
@@ -106,7 +77,6 @@ export default function AccountPage() {
 
   const [saving,     setSaving]     = useState(false);
   const [toast,      setToast]      = useState('');
-  const [showDelete, setShowDelete] = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -130,9 +100,14 @@ export default function AccountPage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    await deleteAccount();
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      showToast('Logged out successfully');
+      navigate('/');
+    } catch {
+      showToast('Error logging out. Please try again.');
+    }
   };
 
   const initials = (userFullName || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -280,14 +255,14 @@ export default function AccountPage() {
 
             {/* Divider + action bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 border-t" style={{ borderColor: '#DFE1E6' }}>
-              {/* Delete account */}
+              {/* Logout button */}
               <button
-                onClick={() => setShowDelete(true)}
+                onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                style={{ background: 'rgba(222,53,11,0.08)', color: '#DE350B' }}
+                style={{ background: 'rgba(243,0,0,0.08)', color: '#F30000' }}
               >
-                <Trash2 className="w-4 h-4" />
-                Delete Account
+                <LogOut className="w-4 h-4" />
+                Logout
               </button>
 
               {/* Cancel / Save */}
@@ -326,12 +301,6 @@ export default function AccountPage() {
         </motion.div>
       )}
 
-      {showDelete && (
-        <DeleteModal
-          onConfirm={handleDeleteAccount}
-          onCancel={() => setShowDelete(false)}
-        />
-      )}
     </div>
   );
 }

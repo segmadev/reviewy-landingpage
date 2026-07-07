@@ -103,6 +103,17 @@ function BuilderInner() {
         try {
           const cv = await getResumeById(id);
           dispatch({ type: 'LOAD_CV', payload: cv });
+
+          // When editing existing CV, auto-fill job description from jobUrl or jobDescription
+          if (cv.jobUrl || cv.jobDescription) {
+            const jobDescToUse = cv.jobDescription || cv.jobUrl || '';
+            if (jobDescToUse && jobDescToUse.trim().length > 0) {
+              dispatch({ type: 'SET_JOB_DESCRIPTION', payload: jobDescToUse });
+            }
+          }
+
+          // When editing, start from Job Targeting (Step 1)
+          goToStep(1);
         } catch (error) {
           console.error('Failed to load CV:', error);
           showError('Failed to load CV. Please try again.');
@@ -112,7 +123,7 @@ function BuilderInner() {
       };
       loadCV();
     }
-  }, [id, state.submittedCvId, dispatch, showError]);
+  }, [id, state.submittedCvId, dispatch, showError, goToStep]);
 
   const currentStep = state.currentStep;
 
