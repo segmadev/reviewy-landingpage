@@ -139,3 +139,14 @@ export interface SavedCV {
   createdAt: string;   // ISO
   updatedAt: string;   // ISO
 }
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  credits: number;
+  features?: string[];
+  active: boolean;
+}

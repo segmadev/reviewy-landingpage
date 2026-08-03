@@ -1,0 +1,67 @@
+{
+  "info": {
+    "_postman_id": "3a9498d3-4ef9-40b3-91c0-509857919252",
+    "name": "to-be-shared",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "43779472"
+  },
+  "item": [
+    {
+      "name": "List Active Products Copy",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{auth_secret_0pao}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_url}}/product/active",
+          "host": [
+            "{{gateway_url}}"
+          ],
+          "path": [
+            "product",
+            "active"
+          ]
+        },
+        "description": "List all active products available for purchase."
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Field Balances Usage",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{gateway_url}}/internal/ai-credits/user-balance/{{user_id}}/usage",
+          "host": [
+            "{{gateway_url}}"
+          ],
+          "path": [
+            "internal",
+            "ai-credits",
+            "user-balance",
+            "{{user_id}}",
+            "usage"
+          ]
+        },
+        "description": "Get all credit balances for the user across all fields."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "auth_secret_0pao",
+      "secret": true
+    }
+  ]
+}

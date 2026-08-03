@@ -24,6 +24,8 @@ import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary'
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useToast } from '../../context/ToastContext';
 import { STORAGE_KEYS } from '../../config/api.config';
+import { getAnonymousDraft, isAnonymousSession } from '../../services/anonymousSession';
+import AnonymousSessionWarning from '../../components/AnonymousSessionWarning';
 import type { SavedCV } from '../../types/resume';
 
 const DARK_PANEL = '#1c1c1e';
@@ -95,7 +97,7 @@ function BuilderInner() {
   const [showDesign,     setShowDesign]     = useState(false);
   const [isLoadingCV,    setIsLoadingCV]    = useState(false);
 
-  // Load CV from backend using URL parameter if provided
+  // Load CV from backend using URL parameter if provided, or load anonymous draft
   useEffect(() => {
     if (id && id !== state.submittedCvId) {
       const loadCV = async () => {
@@ -122,6 +124,12 @@ function BuilderInner() {
         }
       };
       loadCV();
+    } else if (!id && isAnonymousSession()) {
+      // Load anonymous draft if no CV ID provided
+      const draft = getAnonymousDraft();
+      if (draft) {
+        dispatch({ type: 'LOAD_CV', payload: draft });
+      }
     }
   }, [id, state.submittedCvId, dispatch, showError, goToStep]);
 
@@ -230,6 +238,7 @@ function BuilderInner() {
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       {LoadingOverlay}
+      <AnonymousSessionWarning />
       {/* Green sidebar (desktop only) */}
       <BuilderSidebar />
 

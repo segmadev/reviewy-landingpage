@@ -301,13 +301,81 @@ export async function deleteAccount(): Promise<void> {
   }
 }
 
+// ─── Products ────────────────────────────────────────────────────────────────
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  credits: number;
+  features?: string[];
+  active: boolean;
+}
+
+export async function getActiveProducts(): Promise<Product[]> {
+  try {
+    const response = (await http.get('/product/active')) as any[];
+
+    // Normalize product objects to ensure 'id' field exists
+    return response.map((product: any) => ({
+      ...product,
+      id: product.id || product._id || product.productId || '',
+    })) as Product[];
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw new Error('Failed to load products.');
+    }
+    throw error;
+  }
+}
+
+export async function getProductById(productId: string): Promise<Product> {
+  try {
+    const response = (await http.get(`/product/find/${productId}`)) as Product;
+    return response;
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw new Error('Failed to load product.');
+    }
+    throw error;
+  }
+}
+
+// ─── Credits ─────────────────────────────────────────────────────────────────
+
+export interface CreditBalance {
+  userId: string;
+  balance: number;
+  remaining: number;
+  lastUpdated: string;
+}
+
+export async function getUserCreditBalance(userId: string): Promise<CreditBalance> {
+  try {
+    const response = (await http.get(
+      `/internal/ai-credits/user-balance/${userId}/usage`
+    )) as CreditBalance;
+    return response;
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw new Error('Failed to load credit balance.');
+    }
+    throw error;
+  }
+}
+
 // ─── Payments ────────────────────────────────────────────────────────────────
 
 export interface PaymentResponse {
   transactionId: string;
-  status: string;
-  amount: number;
-  currency: string;
+  status?: string;
+  paymentStatus?: string;
+  amount?: number;
+  currency?: string;
+  paymentLink?: string;
+  referenceId?: string;
 }
 
 export async function initiatePayment(

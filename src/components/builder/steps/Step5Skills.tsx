@@ -6,11 +6,14 @@ import { useBuilder } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { getAISkillSuggestions } from '../../../services/api';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
+import { usePaymentGate } from '../../../hooks/usePaymentGate';
+import PaymentModal from '../../PaymentModal';
 
 export default function Step5Skills() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
   const { error: showError } = useToast();
   const { suggestions: cvSuggestions } = useCVSuggestions();
+  const paymentGate = usePaymentGate();
   const [skills, setSkills] = useState<string[]>(state.skills.length ? state.skills : []);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [reasoning, setReasoning] = useState('');
@@ -196,6 +199,14 @@ export default function Step5Skills() {
           Save & Continue →
         </Button>
       </div>
+
+      <PaymentModal
+        isOpen={paymentGate.showPaymentModal}
+        onClose={paymentGate.closePaymentModal}
+        onPaymentSuccess={paymentGate.retryAfterPayment}
+        aiFeatureName={paymentGate.aiFeatureName}
+        requiredCredits={paymentGate.requiredCredits}
+      />
     </motion.div>
   );
 }

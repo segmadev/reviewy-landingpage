@@ -6,6 +6,8 @@ import { useBuilder } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { getAIBulletPoints } from '../../../services/api';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
+import { usePaymentGate } from '../../../hooks/usePaymentGate';
+import PaymentModal from '../../PaymentModal';
 import type { WorkExperience } from '../../../types/resume';
 
 function newEntry(): WorkExperience {
@@ -16,6 +18,7 @@ export default function Step3WorkHistory() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
   const { suggestions } = useCVSuggestions();
   const { error: showError } = useToast();
+  const paymentGate = usePaymentGate();
   const [entries, setEntries] = useState<WorkExperience[]>(
     state.workExperience.length > 0 ? state.workExperience : [newEntry()]
   );
@@ -50,14 +53,19 @@ export default function Step3WorkHistory() {
   const requestAI = async (id: string) => {
     setAiTarget(id);
     setAiLoading(true);
-    try {
-      const response = await getAIBulletPoints(state.jobDescription, []);
-      setAiBullets(response.items);
-    } catch (error) {
-      console.error('Failed to get AI suggestions:', error);
-    } finally {
-      setAiLoading(false);
-    }
+
+    await paymentGate.gateAIFeature(
+      'Work Experience Bullet Points',
+      async () => {
+        return await getAIBulletPoints(state.jobDescription, []);
+      },
+      10,
+      (response) => {
+        setAiBullets(response.items);
+      }
+    );
+
+    setAiLoading(false);
   };
 
   const acceptBullet = (id: string, bullet: string) => {
@@ -346,6 +354,14 @@ export default function Step3WorkHistory() {
         <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
         <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">Save & Continue →</Button>
       </div>
+
+      <PaymentModal
+        isOpen={paymentGate.showPaymentModal}
+        onClose={paymentGate.closePaymentModal}
+        onPaymentSuccess={paymentGate.retryAfterPayment}
+        aiFeatureName={paymentGate.aiFeatureName}
+        requiredCredits={paymentGate.requiredCredits}
+      />
     </motion.div>
   );
 }

@@ -5,10 +5,13 @@ import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { generateSummary } from '../../../services/api';
+import { usePaymentGate } from '../../../hooks/usePaymentGate';
+import PaymentModal from '../../PaymentModal';
 
 export default function Step6Summary() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
   const { error: showError } = useToast();
+  const paymentGate = usePaymentGate();
   const [summary, setSummary] = useState(state.professionalSummary);
   const [generating, setGenerating] = useState(false);
   const [reasoning, setReasoning] = useState('');
@@ -86,25 +89,20 @@ export default function Step6Summary() {
     abortControllerRef.current = new AbortController();
     setGenerating(true);
 
-    try {
-      const response = await generateSummary(state.jobDescription, contentToSend, conversationId);
-      // Only update if not aborted
-      if (!abortControllerRef.current.signal.aborted) {
+    await paymentGate.gateAIFeature(
+      'Professional Summary',
+      async () => {
+        return await generateSummary(state.jobDescription, contentToSend, conversationId);
+      },
+      10,
+      (response) => {
         setSummary(response.items[0] || '');
         setReasoning(response.reasoning);
         setConversationId(response.conversationId);
       }
-    } catch (error) {
-      // Don't show error if user cancelled
-      if (abortControllerRef.current?.signal.aborted) {
-        console.log('AI generation cancelled by user');
-      } else {
-        console.error('Failed to generate summary:', error);
-        showError('Failed to generate summary. Please try again.');
-      }
-    } finally {
-      setGenerating(false);
-    }
+    );
+
+    setGenerating(false);
   };
 
   const handleCancelGeneration = () => {
@@ -263,6 +261,14 @@ export default function Step6Summary() {
           Save & Continue →
         </Button>
       </div>
+
+      <PaymentModal
+        isOpen={paymentGate.showPaymentModal}
+        onClose={paymentGate.closePaymentModal}
+        onPaymentSuccess={paymentGate.retryAfterPayment}
+        aiFeatureName={paymentGate.aiFeatureName}
+        requiredCredits={paymentGate.requiredCredits}
+      />
     </motion.div>
   );
 }

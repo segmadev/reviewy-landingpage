@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Download, FileText, Image, FileType2, Loader2 } from 'lucide-react';
+import { Download, FileText, Image, FileType2, Loader2, Lock } from 'lucide-react';
 import { downloadAsPDF, downloadAsDoc, downloadAsImage } from '../../services/downloadCV';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 interface Props {
   /** Ref to the FULL-SCALE (unscaled) CV element used for image/PDF capture */
@@ -22,6 +24,8 @@ const FORMATS = [
 ] as const;
 
 export default function DownloadMenu({ printRef, filename = 'My CV', className = '', triggerStyle, label = 'Download' }: Props) {
+  const { isAuthenticated } = useAuth();
+  const { error: showError } = useToast();
   const [open,    setOpen]    = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -34,7 +38,19 @@ export default function DownloadMenu({ printRef, filename = 'My CV', className =
     return () => document.removeEventListener('mousedown', h);
   }, [open]);
 
+  const handleDownloadClick = () => {
+    if (!isAuthenticated) {
+      showError('Please sign in to download your CV');
+      return;
+    }
+    setOpen(v => !v);
+  };
+
   const handleFormat = async (fmt: 'pdf' | 'doc' | 'image') => {
+    if (!isAuthenticated) {
+      showError('Please sign in to download your CV');
+      return;
+    }
     if (!printRef.current) return;
     setLoading(fmt);
     setOpen(false);
@@ -50,13 +66,16 @@ export default function DownloadMenu({ printRef, filename = 'My CV', className =
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={handleDownloadClick}
         disabled={!!loading}
         className={`flex items-center gap-2 font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60 ${className}`}
         style={triggerStyle}
+        title={!isAuthenticated ? 'Sign in to download your CV' : ''}
       >
         {loading
           ? <Loader2 className="w-4 h-4 animate-spin" />
+          : !isAuthenticated
+          ? <Lock className="w-4 h-4" />
           : <Download className="w-4 h-4" />}
         {loading ? 'Preparing…' : label}
       </button>

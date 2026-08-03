@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { saveBuilderStep } from '../services/api';
 import { STORAGE_KEYS } from '../config/api.config';
+import { saveAnonymousDraft } from '../services/anonymousSession';
 
 const AUTOSAVE_DELAY = 1000; // 1 second debounce
 
@@ -16,11 +17,11 @@ export function useAutoSave() {
   const lastSavedRef = useRef<string>('');
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    // Don't autosave until Step 1 (Job Targeting) is complete (only for new CVs)
-    const isNewCV = !state.submittedCvId;
-    if (isNewCV && (!state.jobDescription || state.jobDescription.trim() === '')) return;
+    // For authenticated users: Don't autosave until Step 1 (Job Targeting) is complete (only for new CVs)
+    if (isAuthenticated) {
+      const isNewCV = !state.submittedCvId;
+      if (isNewCV && (!state.jobDescription || state.jobDescription.trim() === '')) return;
+    }
 
     // Create a hash of the current state to detect changes
     const stateHash = JSON.stringify({
@@ -52,11 +53,17 @@ export function useAutoSave() {
     // Set new timeout for debounced save
     timeoutRef.current = setTimeout(async () => {
       try {
-        const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
-        const newResumeId = await saveBuilderStep(resumeId, state);
+        if (isAuthenticated) {
+          // Save to backend for authenticated users
+          const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
+          const newResumeId = await saveBuilderStep(resumeId, state);
 
-        // Store resume ID for next saves
-        localStorage.setItem(STORAGE_KEYS.RESUMED_ID, newResumeId);
+          // Store resume ID for next saves
+          localStorage.setItem(STORAGE_KEYS.RESUMED_ID, newResumeId);
+        } else {
+          // Save to localStorage for anonymous users
+          saveAnonymousDraft(state);
+        }
 
         lastSavedRef.current = stateHash;
         setSaveStatus('saved');

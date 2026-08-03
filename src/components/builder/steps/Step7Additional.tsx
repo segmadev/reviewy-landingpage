@@ -5,6 +5,8 @@ import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { suggestCertifications } from '../../../services/api';
+import { usePaymentGate } from '../../../hooks/usePaymentGate';
+import PaymentModal from '../../PaymentModal';
 import type { Certification, Reference } from '../../../types/resume';
 
 function newCert(): Certification {
@@ -17,6 +19,7 @@ function newRef(): Reference {
 export default function Step7Additional() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
   const { error: showError } = useToast();
+  const paymentGate = usePaymentGate();
   const [languages, setLanguages] = useState<string[]>(state.languages ?? []);
   const [certs, setCerts] = useState<Certification[]>(state.certifications ?? []);
   const [awards, setAwards] = useState<string[]>(state.awards ?? []);
@@ -38,26 +41,29 @@ export default function Step7Additional() {
     }
 
     setGeneratingCerts(true);
-    try {
-      const certTitles = certs.map(c => c.title).filter(Boolean);
-      const response = await suggestCertifications(state.jobDescription, certTitles, certConversationId);
 
-      // Add suggested certifications
-      const newCerts = response.items.map(title => ({
-        id: Date.now().toString() + Math.random(),
-        title,
-        issuer: '',
-        date: '',
-      }));
-      setCerts([...certs, ...newCerts]);
-      setCertReasoning(response.reasoning);
-      setCertConversationId(response.conversationId);
-    } catch (error) {
-      console.error('Failed to generate certifications:', error);
-      showError('Failed to suggest certifications. Please try again.');
-    } finally {
-      setGeneratingCerts(false);
-    }
+    const certTitles = certs.map(c => c.title).filter(Boolean);
+
+    await paymentGate.gateAIFeature(
+      'Certification Suggestions',
+      async () => {
+        return await suggestCertifications(state.jobDescription, certTitles, certConversationId);
+      },
+      10,
+      (response) => {
+        const newCerts = response.items.map((title: string) => ({
+          id: Date.now().toString() + Math.random(),
+          title,
+          issuer: '',
+          date: '',
+        }));
+        setCerts([...certs, ...newCerts]);
+        setCertReasoning(response.reasoning);
+        setCertConversationId(response.conversationId);
+      }
+    );
+
+    setGeneratingCerts(false);
   };
 
   const toggles = state.toggles;
@@ -279,6 +285,14 @@ export default function Step7Additional() {
         <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
         <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">Finish & Review →</Button>
       </div>
+
+      <PaymentModal
+        isOpen={paymentGate.showPaymentModal}
+        onClose={paymentGate.closePaymentModal}
+        onPaymentSuccess={paymentGate.retryAfterPayment}
+        aiFeatureName={paymentGate.aiFeatureName}
+        requiredCredits={paymentGate.requiredCredits}
+      />
     </motion.div>
   );
 }

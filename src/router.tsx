@@ -13,9 +13,9 @@ import { ProtectedRoute }      from './components/ProtectedRoute';
 const router = createBrowserRouter([
   { path: '/',                      element: <LandingPage />            },
   { path: '/auth/login',            element: <LoginPage />              },
-  { path: '/builder/template',      element: <ProtectedRoute><ChooseTemplatePage /></ProtectedRoute>     },
-  { path: '/builder/result',        element: <ProtectedRoute><BuilderResultPage /></ProtectedRoute>      },
-  { path: '/builder/:id?',          element: <ProtectedRoute><BuilderPage /></ProtectedRoute>            },
+  { path: '/builder/template',      element: <ChooseTemplatePage />     },
+  { path: '/builder/result',        element: <BuilderResultPage />      },
+  { path: '/builder/:id?',          element: <BuilderPage />            },
   { path: '/dashboard',             element: <ProtectedRoute><DashboardPage /></ProtectedRoute>          },
   { path: '/dashboard/account',     element: <ProtectedRoute><AccountPage /></ProtectedRoute>            },
   { path: '/dashboard/templates',   element: <ProtectedRoute><DashboardTemplatesPage /></ProtectedRoute> },
