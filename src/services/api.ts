@@ -345,11 +345,22 @@ export async function getProductById(productId: string): Promise<Product> {
 
 // ─── Credits ─────────────────────────────────────────────────────────────────
 
+export interface CreditFieldUsage {
+  fieldName: string;
+  creditsAllocated: number;
+  creditsRemaining: number;
+  creditsUsed: number;
+  creditCostPerUse: number;
+  usagePercentage: number;
+}
+
 export interface CreditBalance {
   userId: string;
-  balance: number;
-  remaining: number;
-  lastUpdated: string;
+  overallUsagePercentage: number;
+  totalCreditsAllocated: number;
+  totalCreditsRemaining: number;
+  totalCreditsUsed: number;
+  fields: CreditFieldUsage[];
 }
 
 export async function getUserCreditBalance(userId: string): Promise<CreditBalance> {

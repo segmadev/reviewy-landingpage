@@ -7,6 +7,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getUserCreditBalance } from '../services/api';
 
 interface CreditCheckResult {
   hasCredits: boolean;
@@ -54,18 +55,9 @@ export const usePaymentGate = () => {
       }
 
       try {
-        // Fetch user credit balance from backend
-        const response = await fetch(
-          `/api/ai-credits/user-balance/${user.id}/usage`,
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-          }
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch credits');
-
-        const data = await response.json();
-        const balance = data.balance || 0;
+        // Fetch user credit balance from backend using API service
+        const creditBalance = await getUserCreditBalance(user.id);
+        const balance = creditBalance.totalCreditsRemaining || 0;
 
         return {
           hasCredits: balance >= requiredCredits,
