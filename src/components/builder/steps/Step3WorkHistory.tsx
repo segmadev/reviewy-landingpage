@@ -206,12 +206,12 @@ export default function Step3WorkHistory() {
                 {entry.responsibilities.map((r, ri) => (
                   <div key={ri} className="flex gap-2 items-start">
                     <span className="text-primary mt-2.5 text-xs shrink-0">▪</span>
-                    <input
-                      type="text"
+                    <textarea
                       value={r}
                       onChange={(e) => updateBullet(entry.id, ri, e.target.value)}
-                      placeholder="Describe a key achievement or responsibility…"
-                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
+                      placeholder="Describe your key achievements and experience honestly. This may include previous employment, volunteer work, relevant school projects, or online courses, provided they relate to the position you are applying for."
+                      rows={3}
+                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm resize-none"
                     />
                     {entry.responsibilities.length > 1 && (
                       <button
