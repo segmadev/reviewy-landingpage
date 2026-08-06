@@ -210,8 +210,8 @@ export default function Step3WorkHistory() {
                       value={r}
                       onChange={(e) => updateBullet(entry.id, ri, e.target.value)}
                       placeholder="Describe your key achievements and experience honestly. This may include previous employment, volunteer work, relevant school projects, or online courses, provided they relate to the position you are applying for."
-                      rows={3}
-                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm resize-none"
+                      rows={5}
+                      className="flex-1 px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm resize-none overflow-hidden"
                     />
                     {entry.responsibilities.length > 1 && (
                       <button
