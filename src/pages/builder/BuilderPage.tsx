@@ -12,6 +12,7 @@ import TemplateCustomizer from '../../components/templates/TemplateCustomizer';
 import BuilderSidebar from '../../components/builder/BuilderSidebar';
 import CVPreview from '../../components/builder/CVPreview';
 import PreviewModal from '../../components/builder/PreviewModal';
+import FinishLoginModal from '../../components/builder/FinishLoginModal';
 import Step1JobTargeting from '../../components/builder/steps/Step1JobTargeting';
 import Step2Contact from '../../components/builder/steps/Step2Contact';
 import Step3WorkHistory from '../../components/builder/steps/Step3WorkHistory';
@@ -99,6 +100,7 @@ function BuilderInner() {
   const [showDesign,     setShowDesign]     = useState(false);
   const [isLoadingCV,    setIsLoadingCV]    = useState(false);
   const [showWatermark,  setShowWatermark]  = useState(!isAuthenticated);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Load CV from backend using URL parameter if provided, or load anonymous draft
   useEffect(() => {
@@ -237,8 +239,21 @@ function BuilderInner() {
   };
 
   const handleNext = () => {
-    if (currentStep >= 7) handleFinish();
-    else nextStep();
+    if (currentStep >= 7) {
+      // Check if user is authenticated before allowing finish
+      if (!isAuthenticated) {
+        setShowLoginModal(true);
+        return;
+      }
+      handleFinish();
+    } else {
+      nextStep();
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    // Proceed with finish after successful login
+    handleFinish();
   };
 
   React.useEffect(() => {
@@ -644,6 +659,13 @@ function BuilderInner() {
           <p className="text-sm text-white/50 mt-1">This only takes a moment</p>
         </div>
       )}
+
+      {/* Login modal for finish & review */}
+      <FinishLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }
