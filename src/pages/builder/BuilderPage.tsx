@@ -231,8 +231,17 @@ function BuilderInner() {
       // Clear builder cache after successful save
       localStorage.removeItem(BUILDER_CACHE_KEY);
       navigate('/builder/result');
-    } catch (error) {
+    } catch (error: any) {
       const message = error instanceof Error ? error.message : 'Failed to save CV';
+
+      // Check if error is 401 Unauthorized - show login modal again
+      if (error?.response?.status === 401 || message.includes('401')) {
+        showError('Your session expired. Please log in again to save your CV.');
+        dispatch({ type: 'SET_SUBMITTING', payload: false });
+        setShowLoginModal(true);
+        return;
+      }
+
       showError(message);
       dispatch({ type: 'SET_SUBMITTING', payload: false });
     }
@@ -252,8 +261,10 @@ function BuilderInner() {
   };
 
   const handleLoginSuccess = () => {
-    // Proceed with finish after successful login
-    handleFinish();
+    // Wait for auth state to update properly before proceeding
+    setTimeout(() => {
+      handleFinish();
+    }, 300);
   };
 
   React.useEffect(() => {
