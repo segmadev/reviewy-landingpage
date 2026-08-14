@@ -28,7 +28,6 @@ export default function LoginPage() {
   const [signupForm, setSignupForm] = useState({
     email: '',
     password: '',
-    confirmPassword: '',
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -86,14 +85,6 @@ export default function LoginPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // Validation
-    if (signupForm.password !== signupForm.confirmPassword) {
-      const msg = 'Passwords do not match.';
-      setError(msg);
-      showError(msg);
-      return;
-    }
 
     setLoading(true);
     try {
@@ -203,23 +194,6 @@ export default function LoginPage() {
                       <Eye className="w-4 h-4" />
                     )}
                   </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="••••••••"
-                    value={signupForm.confirmPassword}
-                    onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-                  />
                 </div>
               </div>
 

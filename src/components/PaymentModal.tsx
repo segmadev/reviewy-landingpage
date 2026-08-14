@@ -51,7 +51,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [signupForm, setSignupForm] = useState({
     email: '',
     password: '',
-    confirmPassword: '',
   });
 
   // Load products when modal opens and user is authenticated
@@ -143,13 +142,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     e.preventDefault();
     setAuthError('');
 
-    if (signupForm.password !== signupForm.confirmPassword) {
-      const msg = 'Passwords do not match.';
-      setAuthError(msg);
-      showError(msg);
-      return;
-    }
-
     setLoading(true);
     try {
       const signupData: SignupData = {
@@ -172,7 +164,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       const prods = await getActiveProducts();
       setProducts(prods);
       setStep('products');
-      setSignupForm({ email: '', password: '', confirmPassword: '' });
+      setSignupForm({ email: '', password: '' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed. Please try again.';
       setAuthError(message);
@@ -394,23 +386,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Confirm Password
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          placeholder="••••••••"
-                          value={signupForm.confirmPassword}
-                          onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
-                          className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-xs"
-                        />
-                      </div>
-                    </div>
-
                     <Button
                       type="submit"
                       disabled={loading}
@@ -455,7 +430,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         onClick={() => {
                           setAuthMode('login');
                           setAuthError('');
-                          setSignupForm({ email: '', password: '', confirmPassword: '' });
+                          setSignupForm({ email: '', password: '' });
                         }}
                         className="text-primary font-medium hover:underline"
                       >
