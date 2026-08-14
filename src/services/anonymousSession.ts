@@ -59,8 +59,8 @@ export const getCurrentSession = (): AnonymousSession | null => {
     return session;
   }
 
-  // Session expired
-  clearSession();
+  // Session expired - directly remove without calling clearSession to avoid circular dependency
+  localStorage.removeItem(sessionKey);
   return null;
 };
 

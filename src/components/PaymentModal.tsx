@@ -49,8 +49,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   // Auth form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({
-    firstName: '',
-    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -155,8 +153,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setLoading(true);
     try {
       const signupData: SignupData = {
-        firstName: signupForm.firstName,
-        lastName: signupForm.lastName,
         email: signupForm.email,
         password: signupForm.password,
       };
@@ -176,7 +172,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       const prods = await getActiveProducts();
       setProducts(prods);
       setStep('products');
-      setSignupForm({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
+      setSignupForm({ email: '', password: '', confirmPassword: '' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed. Please try again.';
       setAuthError(message);
@@ -357,35 +353,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </form>
                 ) : (
                   <form onSubmit={handleSignup} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          First Name
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="James"
-                          value={signupForm.firstName}
-                          onChange={(e) => setSignupForm({ ...signupForm, firstName: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-xs"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Last Name
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Harrison"
-                          value={signupForm.lastName}
-                          onChange={(e) => setSignupForm({ ...signupForm, lastName: e.target.value })}
-                          className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-xs"
-                        />
-                      </div>
-                    </div>
-
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
                       <div className="relative">
@@ -488,7 +455,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         onClick={() => {
                           setAuthMode('login');
                           setAuthError('');
-                          setSignupForm({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
+                          setSignupForm({ email: '', password: '', confirmPassword: '' });
                         }}
                         className="text-primary font-medium hover:underline"
                       >

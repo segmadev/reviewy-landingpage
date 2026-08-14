@@ -12,8 +12,6 @@ import { ENDPOINTS } from '../config/api.config';
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export interface SignupData {
-  firstName: string;
-  lastName: string;
   email: string;
   password: string;
 }
