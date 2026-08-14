@@ -216,9 +216,9 @@ export default function Step7Additional() {
         ))}
       </div>
 
-      <div className="flex justify-between mt-8 pb-6 lg:pb-0 gap-3">
-        <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
-        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">Finish & Review →</Button>
+      <div className="hidden lg:flex justify-between mt-8 pb-6 gap-3">
+        <Button variant="outline" size="md" onClick={prevStep}>← Previous</Button>
+        <Button size="lg" onClick={handleNext}>Finish & Review →</Button>
       </div>
 
       <PaymentModal
