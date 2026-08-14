@@ -653,6 +653,7 @@ function BuilderInner() {
           templateId={state.templateId}
           customizations={state.templateCustomizations}
           onClose={() => setShowModal(false)}
+          showWatermark={showWatermark}
         />
       )}
 

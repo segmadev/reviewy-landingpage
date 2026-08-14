@@ -10,11 +10,12 @@ interface Props {
   templateId: string;
   customizations: Record<string, Partial<TemplateOptions>>;
   onClose: () => void;
+  showWatermark?: boolean;
 }
 
 const SCALES = [0.5, 0.65, 0.8, 1.0];
 
-export default function PreviewModal({ data, templateId, customizations, onClose }: Props) {
+export default function PreviewModal({ data, templateId, customizations, onClose, showWatermark = false }: Props) {
   const [scaleIdx, setScaleIdx] = useState(2); // default 0.8
   const scale = SCALES[scaleIdx];
 
@@ -87,6 +88,7 @@ export default function PreviewModal({ data, templateId, customizations, onClose
             scale={scale}
             templateId={templateId}
             customizations={customizations}
+            showWatermark={showWatermark}
           />
         </div>
       </div>
