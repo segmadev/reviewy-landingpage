@@ -45,7 +45,13 @@ export default function MinimalTemplate({ data, scale: s = 1, options }: Props) 
       </h1>
       <Rule />
       <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: `${3 * s}px ${10 * s}px`, fontSize: `${8 * s}px`, color: '#6b7280', marginBottom: `${4 * s}px` }}>
-        {[contactDetails?.email, contactDetails?.phone, contactDetails?.address, linkedinProfile?.replace('https://', ''), portfolioLinks?.[0]?.replace('https://', '')]
+        {[
+          contactDetails?.email,
+          contactDetails?.phone,
+          [contactDetails?.address, contactDetails?.city].filter(Boolean).join(', '),
+          linkedinProfile?.replace('https://', ''),
+          portfolioLinks?.[0]?.replace('https://', '')
+        ]
           .filter(Boolean).map((item, i) => <span key={i}>{item}</span>)}
       </div>
 

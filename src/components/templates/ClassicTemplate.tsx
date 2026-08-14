@@ -44,8 +44,13 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
           {contactDetails?.fullName || 'Your Name'}
         </h1>
         <div style={{ fontSize: `${8 * s}px`, color: '#4B5563', marginTop: `${4 * s}px`, display: 'flex', flexWrap: 'wrap' as const, justifyContent: 'center', gap: `${4 * s}px` }}>
-          {[contactDetails?.address, contactDetails?.phone, contactDetails?.email,
-            linkedinProfile?.replace('https://', ''), portfolioLinks?.[0]?.replace('https://', '')]
+          {[
+            [contactDetails?.address, contactDetails?.city].filter(Boolean).join(', '),
+            contactDetails?.phone,
+            contactDetails?.email,
+            linkedinProfile?.replace('https://', ''),
+            portfolioLinks?.[0]?.replace('https://', '')
+          ]
             .filter(Boolean).map((item, i, arr) => (
               <span key={`contact-${i}`}>{item}{i < arr.length - 1 ? ' ·' : ''}</span>
             ))}

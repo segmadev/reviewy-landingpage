@@ -70,7 +70,7 @@ export default function SidebarTemplate({ data, scale: s = 1, options }: Props) 
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: `${4 * s}px`, fontSize: `${7.5 * s}px`, color: 'rgba(255,255,255,0.75)' }}>
             {contactDetails?.email && <span style={{ wordBreak: 'break-all' as const }}>{contactDetails.email}</span>}
             {contactDetails?.phone && <span>{contactDetails.phone}</span>}
-            {contactDetails?.address && <span>{contactDetails.address}</span>}
+            {contactDetails?.address && <span>{[contactDetails.address, contactDetails.city].filter(Boolean).join(', ')}</span>}
             {linkedinProfile && <span style={{ wordBreak: 'break-all' as const }}>{linkedinProfile.replace('https://', '')}</span>}
             {portfolioLinks?.[0] && <span style={{ wordBreak: 'break-all' as const }}>{portfolioLinks[0].replace('https://', '')}</span>}
           </div>

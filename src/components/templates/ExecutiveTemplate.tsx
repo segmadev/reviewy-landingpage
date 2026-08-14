@@ -31,7 +31,12 @@ export default function ExecutiveTemplate({ data, scale: s = 1, options }: Props
     );
   }
 
-  const contactItems = [contactDetails?.email, contactDetails?.phone, contactDetails?.address, linkedinProfile?.replace('https://', '')].filter(Boolean);
+  const contactItems = [
+    contactDetails?.email,
+    contactDetails?.phone,
+    [contactDetails?.address, contactDetails?.city].filter(Boolean).join(', '),
+    linkedinProfile?.replace('https://', '')
+  ].filter(Boolean);
 
   return (
     <div style={{
