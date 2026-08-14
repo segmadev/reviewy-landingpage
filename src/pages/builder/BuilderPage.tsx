@@ -355,7 +355,7 @@ function BuilderInner() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── Form area ─────────────────────────────────────── */}
-          <div className={`flex-1 flex flex-col overflow-hidden ${showPreview ? '' : 'hidden'} lg:flex`}>
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
             {/* Desktop top bar: Dashboard link + Previous */}
             <div className="hidden lg:flex items-center justify-between px-10 pt-7 pb-2 shrink-0">
@@ -385,55 +385,47 @@ function BuilderInner() {
                 {stepComponents[currentStep]}
               </AnimatePresence>
             </div>
-          </div>
 
-          {/* ── Mobile preview (visible on mobile by default) ────────── */}
-          <div
-            className={`lg:hidden flex-1 flex flex-col ${showPreview ? 'hidden' : ''}`}
-            style={{ backgroundColor: DARK_PANEL }}
-          >
-            {/* Mobile top bar */}
-            <div
-              className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b"
-              style={{ borderColor: 'rgba(255,255,255,0.07)' }}
-            >
-              <div className="flex items-center gap-1.5">
-                {TEMPLATES.map(tpl => (
-                  <button
-                    key={tpl.id}
-                    title={tpl.name}
-                    onClick={() => dispatch({ type: 'SET_TEMPLATE', payload: tpl.id })}
-                    className="transition-all rounded-full"
-                    style={{
-                      width: 12, height: 12,
-                      backgroundColor: tpl.accentColor,
-                      border: state.templateId === tpl.id ? '2px solid white' : '2px solid transparent',
-                      transform: state.templateId === tpl.id ? 'scale(1.25)' : 'scale(1)',
-                      opacity: state.templateId === tpl.id ? 1 : 0.4,
-                    }}
-                  />
-                ))}
-                <span className="ml-1 text-[10px] text-white/30 font-medium">{currentTemplateName}</span>
-              </div>
+            {/* Mobile bottom navigation */}
+            <div className="lg:hidden shrink-0 flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+              {currentStep > 1 && (
+                <button
+                  onClick={prevStep}
+                  className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+              )}
+              <div className="flex-1" />
               <button
-                onClick={() => setShowModal(true)}
-                className="p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/10 transition-all"
+                onClick={handleNext}
+                className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold text-sm px-5 py-2 rounded-full transition-colors shadow-lg shadow-primary/30"
               >
-                <Expand className="w-3.5 h-3.5" />
+                {currentStep >= 7 ? 'Finish & Review' : 'Next'}
+                {currentStep < 7 && (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8h10M9 4l4 4-4 4" />
+                  </svg>
+                )}
               </button>
             </div>
+          </div>
 
-            {/* Preview area */}
-            <div className="flex-1 flex justify-center items-start py-4 px-3 overflow-auto">
-              <div className="shadow-2xl shadow-black/60">
-                <CVPreview
-                  data={state}
-                  scale={0.35}
-                  templateId={state.templateId}
-                  customizations={state.templateCustomizations}
-                  showWatermark={showWatermark}
-                />
-              </div>
+          {/* ── Mobile preview (toggleable on mobile) ────────── */}
+          <div
+            className={`lg:hidden flex flex-col shrink-0 w-32 ${showPreview ? '' : 'hidden'}`}
+            style={{ backgroundColor: DARK_PANEL }}
+          >
+            {/* Mobile preview - compact */}
+            <div className="flex-1 flex justify-center items-start py-2 px-1 overflow-auto">
+              <CVPreview
+                data={state}
+                scale={0.25}
+                templateId={state.templateId}
+                customizations={state.templateCustomizations}
+                showWatermark={showWatermark}
+              />
             </div>
           </div>
 
