@@ -4,6 +4,7 @@ import { Download, FileText, Image, FileType2, Loader2, Lock } from 'lucide-reac
 import { downloadAsPDF, downloadAsDoc, downloadAsImage } from '../../services/downloadCV';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { getUserCreditBalance } from '../../services/api';
 
 interface Props {
   /** Ref to the FULL-SCALE (unscaled) CV element used for image/PDF capture */
@@ -24,11 +25,32 @@ const FORMATS = [
 ] as const;
 
 export default function DownloadMenu({ printRef, filename = 'My CV', className = '', triggerStyle, label = 'Download' }: Props) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { error: showError } = useToast();
   const [open,    setOpen]    = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
+  const [hasCredits, setHasCredits] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Check if user has credits allocated
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setHasCredits(false);
+      return;
+    }
+
+    const checkCredits = async () => {
+      try {
+        const balance = await getUserCreditBalance(user.id);
+        setHasCredits((balance.totalCreditsAllocated || 0) > 0);
+      } catch (error) {
+        console.error('Failed to check credits:', error);
+        setHasCredits(false);
+      }
+    };
+
+    checkCredits();
+  }, [isAuthenticated, user?.id]);
 
   // Close on outside click
   useEffect(() => {
@@ -43,12 +65,20 @@ export default function DownloadMenu({ printRef, filename = 'My CV', className =
       showError('Please sign in to download your CV');
       return;
     }
+    if (!hasCredits) {
+      showError('You need to have a paid subscription to download your CV');
+      return;
+    }
     setOpen(v => !v);
   };
 
   const handleFormat = async (fmt: 'pdf' | 'doc' | 'image') => {
     if (!isAuthenticated) {
       showError('Please sign in to download your CV');
+      return;
+    }
+    if (!hasCredits) {
+      showError('You need to have a paid subscription to download your CV');
       return;
     }
     if (!printRef.current) return;

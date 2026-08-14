@@ -7,9 +7,10 @@ interface CVPreviewProps {
   scale?: number;
   templateId?: string;
   customizations?: Record<string, Partial<TemplateOptions>>;
+  showWatermark?: boolean;
 }
 
-const CVPreview: React.FC<CVPreviewProps> = ({ data, scale = 1, templateId = 'classic', customizations = {} }) => {
+const CVPreview: React.FC<CVPreviewProps> = ({ data, scale = 1, templateId = 'classic', customizations = {}, showWatermark = false }) => {
   const tpl = getTemplate(templateId);
   const options = resolveOptions(templateId, customizations);
   const Template = tpl.component;
@@ -34,7 +35,63 @@ const CVPreview: React.FC<CVPreviewProps> = ({ data, scale = 1, templateId = 'cl
     );
   }
 
-  return <Template data={data} scale={scale} options={options} />;
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <Template data={data} scale={scale} options={options} />
+      {showWatermark && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            background: `repeating-linear-gradient(
+              -45deg,
+              transparent,
+              transparent 120px,
+              rgba(153, 153, 153, 0.15) 120px,
+              rgba(153, 153, 153, 0.15) 240px
+            )`,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-around',
+            overflow: 'hidden',
+          }}
+        >
+          {[...Array(8)].map((_, row) => (
+            <div
+              key={row}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-around',
+                width: '100%',
+              }}
+            >
+              {[...Array(3)].map((_, col) => (
+                <div
+                  key={`${row}-${col}`}
+                  style={{
+                    fontSize: `${18 * scale}px`,
+                    fontWeight: 'bold',
+                    color: '#999',
+                    opacity: 0.25,
+                    transform: 'rotate(-45deg)',
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '4px',
+                    textShadow: '0 0 2px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  SAMPLE
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default CVPreview;

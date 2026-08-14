@@ -19,10 +19,11 @@ import Step4Education from '../../components/builder/steps/Step4Education';
 import Step5Skills from '../../components/builder/steps/Step5Skills';
 import Step6Summary from '../../components/builder/steps/Step6Summary';
 import Step7Additional from '../../components/builder/steps/Step7Additional';
-import { submitCV, getResumeById } from '../../services/api';
+import { submitCV, getResumeById, getUserCreditBalance } from '../../services/api';
 import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
-import { useAutoSave } from '../../hooks/useAutoSave';
+import { useAutoSave, BUILDER_CACHE_KEY } from '../../hooks/useAutoSave';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import { STORAGE_KEYS } from '../../config/api.config';
 import { getAnonymousDraft, isAnonymousSession } from '../../services/anonymousSession';
 import AnonymousSessionWarning from '../../components/AnonymousSessionWarning';
@@ -88,6 +89,7 @@ function BuilderInner() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const { state, dispatch, prevStep, nextStep, goToStep } = useBuilder();
+  const { isAuthenticated, user } = useAuth();
   useAutoSave();
   const { success, error: showError } = useToast();
   const [showPreview,    setShowPreview]    = useState(false);
@@ -96,6 +98,7 @@ function BuilderInner() {
   const [showSteps,      setShowSteps]      = useState(false);
   const [showDesign,     setShowDesign]     = useState(false);
   const [isLoadingCV,    setIsLoadingCV]    = useState(false);
+  const [showWatermark,  setShowWatermark]  = useState(!isAuthenticated);
 
   // Load CV from backend using URL parameter if provided, or load anonymous draft
   useEffect(() => {
@@ -132,6 +135,27 @@ function BuilderInner() {
       }
     }
   }, [id, state.submittedCvId, dispatch, showError, goToStep]);
+
+  // Check user's credit balance to determine if watermark should be shown
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setShowWatermark(true);
+      return;
+    }
+
+    const checkCredits = async () => {
+      try {
+        const balance = await getUserCreditBalance(user.id);
+        const hasCredits = (balance.totalCreditsAllocated || 0) > 0;
+        setShowWatermark(!hasCredits);
+      } catch (error) {
+        console.error('Failed to check credits:', error);
+        setShowWatermark(true);
+      }
+    };
+
+    checkCredits();
+  }, [isAuthenticated, user?.id]);
 
   const currentStep = state.currentStep;
 
@@ -202,6 +226,8 @@ function BuilderInner() {
       success('CV saved successfully!');
       dispatch({ type: 'SET_SUBMITTED', payload: cvId });
       localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
+      // Clear builder cache after successful save
+      localStorage.removeItem(BUILDER_CACHE_KEY);
       navigate('/builder/result');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save CV';
@@ -410,6 +436,7 @@ function BuilderInner() {
                   scale={0.52}
                   templateId={state.templateId}
                   customizations={state.templateCustomizations}
+                  showWatermark={showWatermark}
                 />
               </div>
             </div>
@@ -471,6 +498,7 @@ function BuilderInner() {
                     scale={0.45}
                     templateId={state.templateId}
                     customizations={state.templateCustomizations}
+                    showWatermark={showWatermark}
                   />
                 </div>
               </div>

@@ -404,24 +404,36 @@ export default function DashboardPage() {
   useEffect(() => { localStorage.setItem('rym_pref_hints',    String(showHints)); }, [showHints]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     setIsLoading(true);
-    getUserResumes()
-      .then((backendCVs) => {
-        setCVs(backendCVs);
-        if (backendCVs.length > 0) setSelectedId(backendCVs[0].id);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error('Failed to load CVs:', error);
-        // Fallback to local library if backend fails
-        const lib = loadLibrary();
-        setCVs(lib);
-        if (lib.length > 0) setSelectedId(lib[0].id);
-        showError('Failed to load CVs from server');
-        setIsLoading(false);
-      });
+
+    if (isAuthenticated) {
+      // Load CVs from backend
+      getUserResumes()
+        .then((backendCVs) => {
+          setCVs(backendCVs);
+          if (backendCVs.length > 0) setSelectedId(backendCVs[0].id);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error('Failed to load CVs:', error);
+          // Fallback to local library if backend fails
+          const lib = loadLibrary();
+          setCVs(lib);
+          if (lib.length > 0) setSelectedId(lib[0].id);
+          showError('Failed to load CVs from server');
+          setIsLoading(false);
+        });
+    } else {
+      // Load local drafts for anonymous users
+      const drafts = loadLibrary().map(cv => ({
+        ...cv,
+        name: `${cv.name} (Draft)`,
+        isDraft: true,
+      }));
+      setCVs(drafts);
+      if (drafts.length > 0) setSelectedId(drafts[0].id);
+      setIsLoading(false);
+    }
   }, [isAuthenticated, showError]);
 
   const firstName  = user?.fullName?.split(' ')[0] ?? 'there';

@@ -3,6 +3,7 @@ import type { ResumeData, WorkExperience, Education, Certification, Reference, S
 import type { TemplateOptions } from '../components/templates/utils';
 import type { ExtractionResult } from '../services/extractCvData';
 import { sampleResumeData } from '../services/mockData';
+import { BUILDER_CACHE_KEY } from '../hooks/useAutoSave';
 
 export interface BuilderState extends ResumeData {
   currentStep: number;
@@ -49,6 +50,38 @@ const initialState: BuilderState = {
   awards: [],
   hobbies: [],
 };
+
+function getInitialStateWithCache(): BuilderState {
+  try {
+    const cached = localStorage.getItem(BUILDER_CACHE_KEY);
+    if (!cached) return initialState;
+
+    const cacheData = JSON.parse(cached);
+    // Load cached data for Steps 3-7 (preserve Step 1 & 2 defaults)
+    return {
+      ...initialState,
+      workExperience: cacheData.workExperience || [],
+      education: cacheData.education || [],
+      relevantCourseWork: cacheData.relevantCourseWork || '',
+      certifications: cacheData.certifications || [],
+      references: cacheData.references || [],
+      skills: cacheData.skills || [],
+      professionalSummary: cacheData.professionalSummary || '',
+      languages: cacheData.languages || [],
+      awards: cacheData.awards || [],
+      hobbies: cacheData.hobbies || [],
+      toggles: cacheData.toggles || initialState.toggles,
+      linkedinProfile: cacheData.linkedinProfile || '',
+      portfolioLinks: cacheData.portfolioLinks || ['', ''],
+      jobDescription: cacheData.jobDescription || '',
+      templateId: cacheData.templateId || 'classic',
+      templateCustomizations: cacheData.templateCustomizations || {},
+    };
+  } catch (error) {
+    console.error('Failed to load builder cache:', error);
+    return initialState;
+  }
+}
 
 type Action =
   | { type: 'SET_STEP'; payload: number }
@@ -192,7 +225,7 @@ interface BuilderContextValue {
 const BuilderContext = createContext<BuilderContextValue | null>(null);
 
 export function BuilderProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, undefined, getInitialStateWithCache);
 
   const goToStep = useCallback((step: number) => {
     dispatch({ type: 'SET_STEP', payload: step });

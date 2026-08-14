@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Sparkles } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { useBuilder } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
-import { suggestCertifications } from '../../../services/api';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import type { Certification, Reference } from '../../../types/resume';
@@ -29,42 +28,6 @@ export default function Step7Additional() {
   const [langInput, setLangInput] = useState('');
   const [awardInput, setAwardInput] = useState('');
   const [hobbyInput, setHobbyInput] = useState('');
-
-  const [generatingCerts, setGeneratingCerts] = useState(false);
-  const [certReasoning, setCertReasoning] = useState('');
-  const [certConversationId, setCertConversationId] = useState<string | undefined>();
-
-  const handleGenerateCertifications = async () => {
-    if (!state.jobDescription) {
-      showError('Please fill in the job description in Step 1 first');
-      return;
-    }
-
-    setGeneratingCerts(true);
-
-    const certTitles = certs.map(c => c.title).filter(Boolean);
-
-    await paymentGate.gateAIFeature(
-      'Certification Suggestions',
-      async () => {
-        return await suggestCertifications(state.jobDescription, certTitles, certConversationId);
-      },
-      10,
-      (response) => {
-        const newCerts = response.items.map((title: string) => ({
-          id: Date.now().toString() + Math.random(),
-          title,
-          issuer: '',
-          date: '',
-        }));
-        setCerts([...certs, ...newCerts]);
-        setCertReasoning(response.reasoning);
-        setCertConversationId(response.conversationId);
-      }
-    );
-
-    setGeneratingCerts(false);
-  };
 
   const toggles = state.toggles;
 
@@ -161,34 +124,6 @@ export default function Step7Additional() {
                     )}
                     {key === 'certifications' && (
                       <div className="space-y-3 mt-3">
-                        {/* AI Generate Button */}
-                        <button
-                          onClick={handleGenerateCertifications}
-                          disabled={generatingCerts}
-                          className="flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 bg-mint-50 px-3 py-1.5 rounded-lg hover:bg-primary hover:text-white transition-colors disabled:opacity-50 w-full justify-center"
-                        >
-                          {generatingCerts ? (
-                            <>
-                              <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                                className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full"
-                              />
-                              Generating…
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="w-3.5 h-3.5" />
-                              Suggest Certifications
-                            </>
-                          )}
-                        </button>
-
-                        {/* Reasoning */}
-                        {certReasoning && (
-                          <p className="text-xs text-gray-500 italic">{certReasoning}</p>
-                        )}
-
                         {/* Certification entries */}
                         {certs.map((cert) => (
                           <div key={cert.id} className="grid grid-cols-2 gap-2 p-2 bg-white rounded-lg border border-gray-100">

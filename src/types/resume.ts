@@ -139,6 +139,7 @@ export interface SavedCV {
   // ── Meta ──
   createdAt: string;   // ISO
   updatedAt: string;   // ISO
+  isDraft?: boolean;   // marks CV as a draft from localStorage
 }
 
 export interface Product {

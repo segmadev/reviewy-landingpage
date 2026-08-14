@@ -7,6 +7,7 @@ import { STORAGE_KEYS } from '../config/api.config';
 import { saveAnonymousDraft } from '../services/anonymousSession';
 
 const AUTOSAVE_DELAY = 1000; // 1 second debounce
+export const BUILDER_CACHE_KEY = 'rym_builder_cache';
 
 export function useAutoSave() {
   const { state } = useBuilder();
@@ -53,6 +54,28 @@ export function useAutoSave() {
     // Set new timeout for debounced save
     timeoutRef.current = setTimeout(async () => {
       try {
+        // Always save to localStorage cache for quick restoration (Steps 3-7 only)
+        const cacheData = {
+          workExperience: state.workExperience,
+          education: state.education,
+          relevantCourseWork: state.relevantCourseWork,
+          certifications: state.certifications,
+          references: state.references,
+          skills: state.skills,
+          professionalSummary: state.professionalSummary,
+          languages: state.languages,
+          awards: state.awards,
+          hobbies: state.hobbies,
+          toggles: state.toggles,
+          linkedinProfile: state.linkedinProfile,
+          portfolioLinks: state.portfolioLinks,
+          jobDescription: state.jobDescription,
+          templateId: state.templateId,
+          templateCustomizations: state.templateCustomizations,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(BUILDER_CACHE_KEY, JSON.stringify(cacheData));
+
         if (isAuthenticated) {
           // Save to backend for authenticated users
           const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
