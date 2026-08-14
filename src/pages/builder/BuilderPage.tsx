@@ -232,12 +232,15 @@ function BuilderInner() {
       localStorage.removeItem(BUILDER_CACHE_KEY);
       navigate('/builder/result');
     } catch (error: any) {
+      const status = error?.response?.status;
       const message = error instanceof Error ? error.message : 'Failed to save CV';
 
-      // Check if error is 401 Unauthorized - show login modal again
-      if (error?.response?.status === 401 || message.includes('401')) {
-        showError('Your session expired. Please log in again to save your CV.');
+      // Check if error is 401 Unauthorized - session expired or not authenticated
+      if (status === 401 || message.includes('401') || message.includes('Unauthorized')) {
+        showError('Please log in to save your CV.');
         dispatch({ type: 'SET_SUBMITTING', payload: false });
+        // Reset to step 7 so user can try again after login
+        dispatch({ type: 'SET_STEP', payload: 7 });
         setShowLoginModal(true);
         return;
       }
@@ -250,7 +253,7 @@ function BuilderInner() {
   const handleNext = () => {
     if (currentStep >= 7) {
       // Check if user is authenticated before allowing finish
-      if (!isAuthenticated) {
+      if (!isAuthenticated || !user?.id) {
         setShowLoginModal(true);
         return;
       }
@@ -261,10 +264,11 @@ function BuilderInner() {
   };
 
   const handleLoginSuccess = () => {
-    // Wait for auth state to update properly before proceeding
+    // Modal is already closed by FinishLoginModal component
+    // Wait for auth state to fully update before proceeding with finish
     setTimeout(() => {
       handleFinish();
-    }, 300);
+    }, 500);
   };
 
   React.useEffect(() => {
