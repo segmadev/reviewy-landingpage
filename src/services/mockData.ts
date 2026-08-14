@@ -17,7 +17,8 @@ export const mockRecruiterUser: User = {
 export const sampleResumeData: ResumeData = {
   contactDetails: {
     fullName: 'Alexander Wright',
-    address: '24 Canary Wharf, London, E14 5AB',
+    address: '24 Canary Wharf',
+    city: 'London',
     phone: '07700 900123',
     email: 'alex.wright.dev@example.co.uk',
   },

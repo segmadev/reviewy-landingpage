@@ -80,7 +80,7 @@ const HowItWorks: React.FC = () => {
             viewport={{ once: true }}
             className="flex justify-center"
           >
-            <Button size="lg" className="rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-shadow" onClick={() => navigate('/auth/upload')}>
+            <Button size="lg" className="rounded-xl px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-shadow" onClick={() => navigate('/builder')}>
               Try It Out Now
             </Button>
           </motion.div>

@@ -33,8 +33,8 @@ export default function Step2Contact() {
   }, [user?.id]);
 
   const handleNext = () => {
-    if (!contact.fullName.trim() || !contact.email.trim() || !contact.phone.trim() || !contact.address.trim()) {
-      showError('Please fill in all contact details (Name, Email, Phone, Address)');
+    if (!contact.fullName.trim() || !contact.email.trim() || !contact.phone.trim() || !contact.address.trim() || !contact.city.trim()) {
+      showError('Please fill in all contact details (Name, Email, Phone, Address, City)');
       return;
     }
 
@@ -109,7 +109,12 @@ export default function Step2Contact() {
           {field('Phone', 'phone', '07700 900123', 'tel')}
         </div>
 
+        <div>
+          {field('Address', 'address', '123 Main Street', 'text')}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {field('City', 'city', 'London', 'text')}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Postcode</label>
             <input
