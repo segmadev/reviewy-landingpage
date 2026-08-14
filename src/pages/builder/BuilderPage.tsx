@@ -355,7 +355,7 @@ function BuilderInner() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── Form area ─────────────────────────────────────── */}
-          <div className={`flex-1 flex flex-col overflow-hidden ${showPreview ? 'hidden lg:flex' : ''}`}>
+          <div className={`flex-1 flex flex-col overflow-hidden ${showPreview ? '' : 'hidden'} lg:flex`}>
 
             {/* Desktop top bar: Dashboard link + Previous */}
             <div className="hidden lg:flex items-center justify-between px-10 pt-7 pb-2 shrink-0">
@@ -384,6 +384,56 @@ function BuilderInner() {
               <AnimatePresence mode="wait">
                 {stepComponents[currentStep]}
               </AnimatePresence>
+            </div>
+          </div>
+
+          {/* ── Mobile preview (visible on mobile by default) ────────── */}
+          <div
+            className={`lg:hidden flex-1 flex flex-col ${showPreview ? 'hidden' : ''}`}
+            style={{ backgroundColor: DARK_PANEL }}
+          >
+            {/* Mobile top bar */}
+            <div
+              className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b"
+              style={{ borderColor: 'rgba(255,255,255,0.07)' }}
+            >
+              <div className="flex items-center gap-1.5">
+                {TEMPLATES.map(tpl => (
+                  <button
+                    key={tpl.id}
+                    title={tpl.name}
+                    onClick={() => dispatch({ type: 'SET_TEMPLATE', payload: tpl.id })}
+                    className="transition-all rounded-full"
+                    style={{
+                      width: 12, height: 12,
+                      backgroundColor: tpl.accentColor,
+                      border: state.templateId === tpl.id ? '2px solid white' : '2px solid transparent',
+                      transform: state.templateId === tpl.id ? 'scale(1.25)' : 'scale(1)',
+                      opacity: state.templateId === tpl.id ? 1 : 0.4,
+                    }}
+                  />
+                ))}
+                <span className="ml-1 text-[10px] text-white/30 font-medium">{currentTemplateName}</span>
+              </div>
+              <button
+                onClick={() => setShowModal(true)}
+                className="p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/10 transition-all"
+              >
+                <Expand className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Preview area */}
+            <div className="flex-1 flex justify-center items-start py-4 px-3 overflow-auto">
+              <div className="shadow-2xl shadow-black/60">
+                <CVPreview
+                  data={state}
+                  scale={0.35}
+                  templateId={state.templateId}
+                  customizations={state.templateCustomizations}
+                  showWatermark={showWatermark}
+                />
+              </div>
             </div>
           </div>
 
@@ -490,58 +540,6 @@ function BuilderInner() {
             </div>
           </div>
 
-          {/* Mobile preview overlay */}
-          {showPreview && (
-            <div className="lg:hidden flex-1 overflow-auto flex flex-col" style={{ backgroundColor: DARK_PANEL }}>
-              {/* Template switcher in preview */}
-              <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-                <div className="flex items-center gap-1.5">
-                  {TEMPLATES.map(tpl => (
-                    <button
-                      key={tpl.id}
-                      title={tpl.name}
-                      onClick={() => dispatch({ type: 'SET_TEMPLATE', payload: tpl.id })}
-                      className="transition-all rounded-full"
-                      style={{
-                        width: 14, height: 14,
-                        backgroundColor: tpl.accentColor,
-                        border: state.templateId === tpl.id ? '2px solid white' : '2px solid transparent',
-                        transform: state.templateId === tpl.id ? 'scale(1.25)' : 'scale(1)',
-                        opacity: state.templateId === tpl.id ? 1 : 0.45,
-                      }}
-                    />
-                  ))}
-                  <span className="ml-1 text-[10px] text-white/30 font-medium">{currentTemplateName}</span>
-                </div>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/10 transition-all"
-                >
-                  <Expand className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="flex-1 flex justify-center items-start py-6 px-4 overflow-auto">
-                <div className="shadow-2xl shadow-black/60">
-                  <CVPreview
-                    data={state}
-                    scale={0.45}
-                    templateId={state.templateId}
-                    customizations={state.templateCustomizations}
-                    showWatermark={showWatermark}
-                  />
-                </div>
-              </div>
-              <div className="shrink-0 flex justify-end px-5 pb-6">
-                <button
-                  onClick={() => { setShowPreview(false); handleNext(); }}
-                  className="bg-primary text-white font-semibold text-sm px-7 py-2.5 rounded-full shadow-lg shadow-primary/30"
-                >
-                  {currentStep >= 7 ? 'Finish & Review' : 'Next →'}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
