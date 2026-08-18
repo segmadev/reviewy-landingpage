@@ -48,7 +48,7 @@ export default function MinimalTemplate({ data, scale: s = 1, options }: Props) 
         {[
           contactDetails?.email,
           contactDetails?.phone,
-          [contactDetails?.address, contactDetails?.city].filter(Boolean).join(', '),
+          [contactDetails?.address, contactDetails?.city, contactDetails?.postcode].filter(Boolean).join(', '),
           linkedinProfile?.replace('https://', ''),
           portfolioLinks?.[0]?.replace('https://', '')
         ]

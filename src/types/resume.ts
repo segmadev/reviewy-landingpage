@@ -2,6 +2,7 @@ export interface ContactDetails {
   fullName: string;
   address: string;
   city: string;
+  postcode: string;
   phone: string;
   email: string;
 }

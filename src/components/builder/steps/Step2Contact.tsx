@@ -33,8 +33,8 @@ export default function Step2Contact() {
   }, [user?.id]);
 
   const handleNext = () => {
-    if (!contact.fullName.trim() || !contact.email.trim() || !contact.phone.trim() || !contact.address.trim() || !contact.city.trim()) {
-      showError('Please fill in all contact details (Name, Email, Phone, Address, City)');
+    if (!contact.fullName.trim() || !contact.email.trim() || !contact.phone.trim() || !contact.address.trim() || !contact.city.trim() || !contact.postcode.trim()) {
+      showError('Please fill in all contact details (Name, Email, Phone, Address, City, Postcode)');
       return;
     }
 
@@ -115,24 +115,7 @@ export default function Step2Contact() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {field('City', 'city', 'London', 'text')}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Postcode</label>
-            <input
-              type="text"
-              placeholder="E14 5AB"
-              value={contact.address.split(',').pop()?.trim() ?? ''}
-              onChange={(e) => {
-                const parts = contact.address.split(',');
-                if (parts.length > 1) {
-                  parts[parts.length - 1] = ` ${e.target.value}`;
-                  setContact({ ...contact, address: parts.join(',') });
-                } else {
-                  setContact({ ...contact, address: e.target.value });
-                }
-              }}
-              className="w-full px-3 py-2.5 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-            />
-          </div>
+          {field('Postcode', 'postcode', 'E14 5AB', 'text')}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
             <select

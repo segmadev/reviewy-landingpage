@@ -45,7 +45,7 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
         </h1>
         <div style={{ fontSize: `${8 * s}px`, color: '#4B5563', marginTop: `${4 * s}px`, display: 'flex', flexWrap: 'wrap' as const, justifyContent: 'center', gap: `${4 * s}px` }}>
           {[
-            [contactDetails?.address, contactDetails?.city].filter(Boolean).join(', '),
+            [contactDetails?.address, contactDetails?.city, contactDetails?.postcode].filter(Boolean).join(', '),
             contactDetails?.phone,
             contactDetails?.email,
             linkedinProfile?.replace('https://', ''),

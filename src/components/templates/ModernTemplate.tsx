@@ -59,7 +59,7 @@ export default function ModernTemplate({ data, scale: s = 1, options }: Props) {
         <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: `${4 * s}px ${10 * s}px`, fontSize: `${8 * s}px`, color: '#6b7280' }}>
           {contactDetails?.email && <span>✉ {contactDetails.email}</span>}
           {contactDetails?.phone && <span>✆ {contactDetails.phone}</span>}
-          {contactDetails?.address && <span>⌖ {[contactDetails.address, contactDetails.city].filter(Boolean).join(', ')}</span>}
+          {contactDetails?.address && <span>⌖ {[contactDetails.address, contactDetails.city, contactDetails.postcode].filter(Boolean).join(', ')}</span>}
           {linkedinProfile && <span>in {linkedinProfile.replace('https://', '')}</span>}
           {portfolioLinks?.[0] && <span>⧉ {portfolioLinks[0].replace('https://', '')}</span>}
         </div>

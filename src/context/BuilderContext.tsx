@@ -36,7 +36,7 @@ const initialState: BuilderState = {
   isSubmitting: false,
   submittedCvId: null,
   // Resume fields — start blank; populated as user progresses
-  contactDetails: { fullName: '', address: '', city: '', phone: '', email: '' },
+  contactDetails: { fullName: '', address: '', city: '', postcode: '', phone: '', email: '' },
   linkedinProfile: '',
   portfolioLinks: ['', ''],
   professionalSummary: '',

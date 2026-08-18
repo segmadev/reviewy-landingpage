@@ -19,6 +19,7 @@ export const sampleResumeData: ResumeData = {
     fullName: 'Alexander Wright',
     address: '24 Canary Wharf',
     city: 'London',
+    postcode: 'E14 5AB',
     phone: '07700 900123',
     email: 'alex.wright.dev@example.co.uk',
   },

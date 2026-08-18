@@ -34,7 +34,7 @@ export default function ExecutiveTemplate({ data, scale: s = 1, options }: Props
   const contactItems = [
     contactDetails?.email,
     contactDetails?.phone,
-    [contactDetails?.address, contactDetails?.city].filter(Boolean).join(', '),
+    [contactDetails?.address, contactDetails?.city, contactDetails?.postcode].filter(Boolean).join(', '),
     linkedinProfile?.replace('https://', '')
   ].filter(Boolean);
 
