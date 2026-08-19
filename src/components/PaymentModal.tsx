@@ -443,48 +443,90 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             )}
 
             {step === 'products' && (
-              <div>
-                <p className="text-gray-600 text-sm mb-6">
-                  You need <strong>{requiredCredits} credits</strong> to use{' '}
-                  <strong>{aiFeatureName}</strong>. Select a package:
-                </p>
+              <div className="space-y-6">
+                <div>
+                  <p className="text-gray-700 text-sm font-medium mb-2">
+                    Get AI Credits
+                  </p>
+                  <p className="text-gray-500 text-sm leading-relaxed">
+                    You need <strong className="text-gray-700">{requiredCredits} credits</strong> to use <strong className="text-gray-700">{aiFeatureName}</strong>. Choose a plan that fits your needs.
+                  </p>
+                </div>
 
                 <div className="space-y-3">
                   {loading ? (
-                    <div className="flex justify-center py-8">
+                    <div className="flex justify-center py-12">
                       <Loader2 className="w-6 h-6 animate-spin text-primary" />
                     </div>
                   ) : products.length > 0 ? (
-                    products.map((product) => (
-                      <motion.button
-                        key={product.id}
-                        whileHover={{ scale: 1.02 }}
-                        onClick={() => handleSelectProduct(product)}
-                        className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-gray-900">
-                            {product.name}
-                          </h3>
-                          <span className="text-xl font-bold text-primary">
-                            £{product.price}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          {product.description}
-                        </p>
-                        {product.features && (
-                          <ul className="mt-3 text-xs text-gray-500 space-y-1">
-                            {product.features.slice(0, 2).map((feat: string, i: number) => (
-                              <li key={i}>✓ {feat}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </motion.button>
-                    ))
+                    products.map((product, idx) => {
+                      const isMostPopular = idx === 1; // Middle option is typically most popular
+                      const price = product.price || 0;
+
+                      return (
+                        <motion.button
+                          key={product.id}
+                          whileHover={{ scale: 1.01 }}
+                          onClick={() => handleSelectProduct(product)}
+                          className={`w-full p-4 sm:p-5 rounded-xl border-2 transition-all text-left group ${
+                            isMostPopular
+                              ? 'border-primary bg-gradient-to-br from-primary/5 to-primary/2 shadow-md'
+                              : 'border-gray-200 hover:border-primary/50 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-bold text-gray-900 text-base leading-tight">
+                                  {product.name}
+                                </h3>
+                                {isMostPopular && (
+                                  <span className="inline-block px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase whitespace-nowrap">
+                                    Most Popular
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                {product.description?.split('.')[0]}.
+                              </p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div className="text-2xl font-bold text-primary">
+                                £{price}
+                              </div>
+                              <div className="text-[10px] text-gray-500 font-medium">
+                                One-time
+                              </div>
+                            </div>
+                          </div>
+
+                          {product.features && product.features.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                              <ul className="space-y-2">
+                                {product.features.map((feat: string, i: number) => (
+                                  <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                                    <span className="text-primary font-bold mt-0.5 flex-shrink-0">✓</span>
+                                    <span className="leading-snug">{feat}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-500">
+                              Click to select
+                            </span>
+                            <span className="text-sm font-semibold text-primary group-hover:translate-x-0.5 transition-transform">
+                              →
+                            </span>
+                          </div>
+                        </motion.button>
+                      );
+                    })
                   ) : (
-                    <p className="text-gray-500 text-center py-8">
-                      No products available
+                    <p className="text-gray-500 text-center py-12 text-sm">
+                      No products available. Please try again later.
                     </p>
                   )}
                 </div>

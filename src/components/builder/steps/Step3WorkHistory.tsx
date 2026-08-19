@@ -55,7 +55,7 @@ export default function Step3WorkHistory() {
     setAiLoading(true);
 
     await paymentGate.gateAIFeature(
-      'Work Experience Bullet Points',
+      'Key Achievements / Responsibilities',
       async () => {
         return await getAIBulletPoints(state.jobDescription, []);
       },
@@ -181,6 +181,7 @@ export default function Step3WorkHistory() {
                   type="month"
                   value={entry.startDate.slice(0, 7)}
                   onChange={(e) => update(entry.id, { startDate: e.target.value + '-01' })}
+                  max={new Date().toISOString().slice(0, 7)}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
                 />
               </div>
@@ -190,6 +191,7 @@ export default function Step3WorkHistory() {
                   type="month"
                   value={entry.endDate.slice(0, 7)}
                   onChange={(e) => update(entry.id, { endDate: e.target.value + '-01' })}
+                  max={new Date().toISOString().slice(0, 7)}
                   placeholder="Leave blank if current"
                   className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
                 />

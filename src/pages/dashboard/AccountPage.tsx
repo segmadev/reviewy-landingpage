@@ -245,10 +245,12 @@ export default function AccountPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                <div className="space-y-3 w-full">
                   <Field label="Current Password"  value={currentPw} onChange={setCurrentPw} type="password" full placeholder="••••••••" />
-                  <Field label="New Password"       value={newPw}     onChange={setNewPw}     type="password" placeholder="Min 8 characters" />
-                  <Field label="Confirm Password"   value={confirmPw} onChange={setConfirmPw} type="password" placeholder="Repeat new password" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="New Password"       value={newPw}     onChange={setNewPw}     type="password" placeholder="Min 8 characters" />
+                    <Field label="Confirm Password"   value={confirmPw} onChange={setConfirmPw} type="password" placeholder="Repeat new password" />
+                  </div>
                 </div>
               )}
             </div>
