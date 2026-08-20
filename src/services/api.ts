@@ -316,11 +316,20 @@ export async function getActiveProducts(): Promise<Product[]> {
   try {
     const response = (await http.get('/product/active')) as any[];
 
-    // Normalize product objects to ensure 'id' field exists
-    return response.map((product: any) => ({
-      ...product,
-      id: product.id || product._id || product.productId || '',
-    })) as Product[];
+    // Normalize product objects to ensure all required fields exist
+    return response.map((product: any) => {
+      // Extract price from pricing array if available
+      const pricing = product.pricing?.[0];
+      const price = pricing?.amount || product.price || 0;
+      const currency = pricing?.currency || product.currency || 'GBP';
+
+      return {
+        ...product,
+        id: product.id || product._id || product.productId || '',
+        price: price,
+        currency: currency,
+      } as Product;
+    });
   } catch (error) {
     if (error instanceof HttpError) {
       throw new Error('Failed to load products.');
