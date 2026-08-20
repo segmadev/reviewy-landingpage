@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, CheckCircle2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { X, Loader2, CheckCircle2, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getActiveProducts, loginJobSeeker, registerUser, initiatePayment, verifyPayment, type SignupData } from '../services/api';
@@ -45,6 +45,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [transactionId, setTransactionId] = useState<string | null>(null);
 
   // Auth form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -196,6 +199,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
       // Store transaction ID in session for verification
       if (response.transactionId) {
+        setTransactionId(response.transactionId);
         sessionStorage.setItem('paymentTransactionId', response.transactionId);
         sessionStorage.setItem('paymentTimestamp', Date.now().toString());
       }
@@ -236,6 +240,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       console.error('Payment initiation failed:', error);
       showError('Failed to initiate payment. Please try again.');
       setStep('products');
+    }
+  };
+
+  const handleVerifyPayment = async () => {
+    if (!transactionId) {
+      showError('Transaction ID not found. Please try again.');
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const verification = await verifyPayment(transactionId);
+      const status = (verification as any).paymentStatus || verification.status;
+
+      setPaymentStatus(status);
+
+      if (status === 'SUCCESS' || status === 'success') {
+        setStep('payment-success');
+
+        // Auto-retry the AI request after a short delay
+        setTimeout(() => {
+          _onPaymentSuccess();
+          onClose();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Payment verification failed:', error);
+      showError('Failed to verify payment. Please try again.');
+      setPaymentStatus('ERROR');
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -534,14 +569,126 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             )}
 
             {step === 'payment-processing' && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-                <p className="text-gray-600 text-center">
-                  Processing your payment for <strong>{selectedProduct?.name}</strong>...
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  You'll be redirected to complete the payment.
-                </p>
+              <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                {!paymentStatus ? (
+                  <>
+                    <div className="flex flex-col items-center">
+                      <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+                      <p className="text-gray-600 text-center">
+                        Processing your payment for <strong>{selectedProduct?.name}</strong>...
+                      </p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        A payment window should have opened in a new tab.
+                      </p>
+                    </div>
+                    <div className="w-full flex gap-2">
+                      <button
+                        onClick={handleVerifyPayment}
+                        disabled={verifying}
+                        className="flex-1 px-4 py-2.5 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary-hover disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                      >
+                        {verifying ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          <>
+                            ✓ Verify Payment
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPaymentStatus(null);
+                          setTransactionId(null);
+                          setStep('products');
+                        }}
+                        className="px-4 py-2.5 rounded-lg border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full text-center space-y-4">
+                    {paymentStatus === 'SUCCESS' || paymentStatus === 'success' ? (
+                      <>
+                        <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto" />
+                        <div>
+                          <p className="text-gray-900 font-semibold">Payment Confirmed!</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Your payment has been processed successfully.
+                          </p>
+                        </div>
+                      </>
+                    ) : paymentStatus === 'PENDING' || paymentStatus === 'pending' ? (
+                      <>
+                        <div className="flex justify-center">
+                          <Loader2 className="w-12 h-12 text-yellow-500 animate-spin" />
+                        </div>
+                        <div>
+                          <p className="text-gray-900 font-semibold">Payment Pending</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Your payment is still being processed. Please wait or try verifying again.
+                          </p>
+                        </div>
+                      </>
+                    ) : paymentStatus === 'CANCELLED' || paymentStatus === 'cancelled' ? (
+                      <>
+                        <X className="w-12 h-12 text-red-500 mx-auto" />
+                        <div>
+                          <p className="text-gray-900 font-semibold">Payment Cancelled</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Your payment was cancelled. Please try again if you'd like to purchase credits.
+                          </p>
+                        </div>
+                      </>
+                    ) : paymentStatus === 'FAILED' || paymentStatus === 'failed' ? (
+                      <>
+                        <X className="w-12 h-12 text-red-500 mx-auto" />
+                        <div>
+                          <p className="text-gray-900 font-semibold">Payment Failed</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Your payment could not be processed. Please try again or contact support.
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto" />
+                        <div>
+                          <p className="text-gray-900 font-semibold">Unknown Status</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Status: <strong>{paymentStatus}</strong>
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Please try verifying again or contact support.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex gap-2 mt-6">
+                      <button
+                        onClick={handleVerifyPayment}
+                        disabled={verifying || paymentStatus === 'SUCCESS' || paymentStatus === 'success'}
+                        className="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-medium text-sm hover:bg-primary-hover disabled:opacity-60 transition-colors"
+                      >
+                        {verifying ? 'Verifying...' : 'Verify Again'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPaymentStatus(null);
+                          setTransactionId(null);
+                          setStep('products');
+                        }}
+                        className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 font-medium text-sm hover:bg-gray-50 transition-colors"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
