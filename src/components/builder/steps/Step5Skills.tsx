@@ -8,6 +8,7 @@ import { getAISkillSuggestions } from '../../../services/api';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
+import appConfig from '../../../config/app';
 
 export default function Step5Skills() {
   const { state, dispatch, nextStep, prevStep } = useBuilder();
@@ -21,34 +22,42 @@ export default function Step5Skills() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [custom, setCustom] = useState('');
 
-  useEffect(() => {
-    if (!state.jobDescription) return;
+  // Function to load AI suggestions
+  const loadAISuggestions = async () => {
+    if (!state.jobDescription) {
+      showError('Please complete Step 1 (Job Targeting) first');
+      return;
+    }
 
     let cancelled = false;
     setLoadingSuggestions(true);
 
-    getAISkillSuggestions(state.jobDescription, skills, conversationId)
-      .then((response) => {
-        if (!cancelled) {
-          const newSuggestions = response.items.filter((s) => !skills.includes(s));
-          setSuggestions(newSuggestions);
-          setReasoning(response.reasoning);
-          setConversationId(response.conversationId);
-          setLoadingSuggestions(false);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Failed to get AI suggestions:', error);
-          showError('Failed to load AI suggestions');
-          setLoadingSuggestions(false);
-        }
-      });
+    try {
+      const response = await getAISkillSuggestions(state.jobDescription, skills, conversationId);
+      if (!cancelled) {
+        const newSuggestions = response.items.filter((s) => !skills.includes(s));
+        setSuggestions(newSuggestions);
+        setReasoning(response.reasoning);
+        setConversationId(response.conversationId);
+      }
+    } catch (error) {
+      if (!cancelled) {
+        console.error('Failed to get AI suggestions:', error);
+        showError('Failed to load AI suggestions');
+      }
+    } finally {
+      if (!cancelled) {
+        setLoadingSuggestions(false);
+      }
+    }
+  };
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Auto-load suggestions if AI_AUTO_CALL is enabled
+  useEffect(() => {
+    if (!appConfig.AI_AUTO_CALL || !state.jobDescription) return;
+
+    loadAISuggestions();
+  }, [state.jobDescription]);
 
   const addSkill = (skill: string) => {
     if (!skills.includes(skill)) {
@@ -132,15 +141,26 @@ export default function Step5Skills() {
 
       {/* AI Suggestions - Above Your Proven Skills */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-gray-700">AI Suggestions</span>
-          {loadingSuggestions && (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-              className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full ml-1"
-            />
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-gray-700">AI Suggestions</span>
+            {loadingSuggestions && (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full ml-1"
+              />
+            )}
+          </div>
+          {!appConfig.AI_AUTO_CALL && suggestions.length === 0 && !loadingSuggestions && (
+            <button
+              onClick={loadAISuggestions}
+              className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3" />
+              Get Suggestions
+            </button>
           )}
         </div>
         {reasoning && (
