@@ -13,9 +13,13 @@ export default function Step1JobTargeting() {
   }, [state.jobDescription]);
 
   const handleNext = () => {
+    if (!value || value.trim().length === 0) return;
     dispatch({ type: 'SET_JOB_DESCRIPTION', payload: value });
     nextStep();
   };
+
+  const isValid = value && value.trim().length > 0;
+  const charCount = value.trim().length;
 
   return (
     <motion.div
@@ -43,11 +47,24 @@ export default function Step1JobTargeting() {
         className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-primary focus:outline-none transition-colors text-sm text-gray-800 placeholder:text-gray-300 resize-none leading-relaxed"
       />
 
+      <div className="flex justify-between items-center mt-2">
+        <p className="text-xs text-gray-400">Job description is required</p>
+        <p className={`text-xs font-medium ${charCount > 0 ? 'text-primary' : 'text-gray-400'}`}>
+          {charCount} characters
+        </p>
+      </div>
+
       {/* CTA button */}
       <div className="mt-6 pb-6 lg:pb-0">
         <button
           onClick={handleNext}
-          className="w-full lg:w-auto px-7 py-3 rounded-xl border-2 border-primary bg-mint-50 text-primary font-semibold text-sm hover:bg-primary hover:text-white transition-all"
+          disabled={!isValid}
+          title={!isValid ? 'Please enter a job description to continue' : ''}
+          className={`w-full lg:w-auto px-7 py-3 rounded-xl border-2 font-semibold text-sm transition-all ${
+            isValid
+              ? 'border-primary bg-mint-50 text-primary hover:bg-primary hover:text-white cursor-pointer'
+              : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
+          }`}
         >
           Target the Job →
         </button>
