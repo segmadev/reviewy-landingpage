@@ -106,31 +106,45 @@ export async function submitCV(resumeId: string, data: ResumeData): Promise<{ cv
       hobbies: data.hobbies || [],
     };
 
+    console.log(`[API] submitCV called with resumeId: "${resumeId}"`);
+
     if (!resumeId || resumeId.trim() === '') {
       // Create new resume
+      console.log('[API] No resumeId provided, creating new resume via POST');
       const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
+      console.log(`[API] New resume created with ID: ${response.id}`);
       return { cvId: response.id };
     } else {
       // Try to update existing resume
+      console.log(`[API] Attempting to update resume ${resumeId} via PATCH`);
       try {
         await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), cleanData);
+        console.log(`[API] Resume ${resumeId} updated successfully`);
         return { cvId: resumeId };
       } catch (error) {
         // If 404, the resume doesn't exist on backend - create it as new
         if (error instanceof HttpError && error.status === 404) {
-          console.warn(`[API] Resume ${resumeId} not found on backend, creating as new resume`);
-          const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
-          return { cvId: response.id };
+          console.warn(`[API] Resume ${resumeId} not found on backend (404), creating as new resume via POST`);
+          try {
+            const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
+            console.log(`[API] New resume created (fallback from 404) with ID: ${response.id}`);
+            return { cvId: response.id };
+          } catch (createError) {
+            console.error('[API] Failed to create new resume after 404:', createError);
+            throw createError;
+          }
         }
+        console.error(`[API] PATCH failed with status ${(error as HttpError).status}:`, error);
         throw error;
       }
     }
   } catch (error) {
     if (error instanceof HttpError) {
-      throw new Error(
-        (error.data as { message?: string })?.message || 'Failed to submit CV. Please try again.'
-      );
+      const message = (error.data as { message?: string })?.message || `Failed to submit CV. Please try again. (HTTP ${error.status})`;
+      console.error('[API] submitCV failed:', message);
+      throw new Error(message);
     }
+    console.error('[API] submitCV unexpected error:', error);
     throw error;
   }
 }
