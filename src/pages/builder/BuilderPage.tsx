@@ -20,7 +20,7 @@ import Step4Education from '../../components/builder/steps/Step4Education';
 import Step5Skills from '../../components/builder/steps/Step5Skills';
 import Step6Summary from '../../components/builder/steps/Step6Summary';
 import Step7Additional from '../../components/builder/steps/Step7Additional';
-import { submitCV, getResumeById, getUserCreditBalance } from '../../services/api';
+import { submitCV, getResumeById, getUserCreditBalance, convertResumeToNew, ResumeNotFoundError } from '../../services/api';
 import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
 import { useAutoSave, BUILDER_CACHE_KEY } from '../../hooks/useAutoSave';
 import { useToast } from '../../context/ToastContext';
@@ -28,6 +28,7 @@ import { useAuth } from '../../context/AuthContext';
 import { STORAGE_KEYS } from '../../config/api.config';
 import { getAnonymousDraft, isAnonymousSession } from '../../services/anonymousSession';
 import AnonymousSessionWarning from '../../components/AnonymousSessionWarning';
+import ResumeNotFoundModal from '../../components/builder/ResumeNotFoundModal';
 import type { SavedCV } from '../../types/resume';
 
 const DARK_PANEL = '#1c1c1e';
@@ -101,6 +102,9 @@ function BuilderInner() {
   const [isLoadingCV,    setIsLoadingCV]    = useState(false);
   const [showWatermark,  setShowWatermark]  = useState(!isAuthenticated);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showResumeNotFoundModal, setShowResumeNotFoundModal] = useState(false);
+  const [resumeNotFoundId, setResumeNotFoundId] = useState<string>('');
+  const [isConvertingResume, setIsConvertingResume] = useState(false);
 
   // Load CV from backend using URL parameter if provided, or load anonymous draft
   useEffect(() => {
@@ -238,6 +242,15 @@ function BuilderInner() {
       const status = error?.response?.status;
       const message = error instanceof Error ? error.message : 'Failed to save CV';
 
+      // Check if resume was not found on backend (404)
+      if (error instanceof ResumeNotFoundError) {
+        console.log('[Builder] Resume not found, showing modal to user');
+        dispatch({ type: 'SET_SUBMITTING', payload: false });
+        setResumeNotFoundId(error.resumeId);
+        setShowResumeNotFoundModal(true);
+        return;
+      }
+
       // Check if error is 401 Unauthorized - session expired or not authenticated
       if (status === 401 || message.includes('401') || message.includes('Unauthorized')) {
         showError('Please log in to save your CV.');
@@ -251,6 +264,35 @@ function BuilderInner() {
       showError(message);
       dispatch({ type: 'SET_SUBMITTING', payload: false });
     }
+  };
+
+  const handleConvertResume = async () => {
+    setIsConvertingResume(true);
+    try {
+      const cleanedWorkExperience = state.workExperience.filter(
+        (exp) => exp.position && exp.position.trim().length > 0
+      );
+
+      const result = await convertResumeToNew({ ...state, workExperience: cleanedWorkExperience } as any);
+
+      success('Resume converted to new successfully!');
+      dispatch({ type: 'SET_SUBMITTED', payload: result.cvId });
+      localStorage.setItem(STORAGE_KEYS.RESUMED_ID, result.cvId);
+      localStorage.removeItem(BUILDER_CACHE_KEY);
+
+      setShowResumeNotFoundModal(false);
+      navigate('/builder/result');
+    } catch (error: any) {
+      const message = error instanceof Error ? error.message : 'Failed to convert resume';
+      showError(message);
+    } finally {
+      setIsConvertingResume(false);
+    }
+  };
+
+  const handleCancelConvert = () => {
+    setShowResumeNotFoundModal(false);
+    setResumeNotFoundId('');
   };
 
   const handleNext = () => {
@@ -674,6 +716,15 @@ function BuilderInner() {
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* Resume not found modal */}
+      <ResumeNotFoundModal
+        isOpen={showResumeNotFoundModal}
+        isLoading={isConvertingResume}
+        resumeId={resumeNotFoundId}
+        onConvert={handleConvertResume}
+        onCancel={handleCancelConvert}
       />
     </div>
   );

@@ -9,6 +9,17 @@ import type { AuthResponse, ResumeData, SavedCV, User } from '../types/resume';
 import { http, HttpError } from './http-client';
 import { ENDPOINTS } from '../config/api.config';
 
+// Custom error for when resume is not found on backend
+export class ResumeNotFoundError extends Error {
+  public readonly resumeId: string;
+
+  constructor(resumeId: string) {
+    super(`Resume not found on backend. Would you like to convert it to a new resume?`);
+    this.name = 'ResumeNotFoundError';
+    this.resumeId = resumeId;
+  }
+}
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export interface SignupData {
@@ -95,6 +106,38 @@ export async function saveBuilderStep(resumeId: string, data: Partial<ResumeData
   }
 }
 
+export async function convertResumeToNew(data: ResumeData): Promise<{ cvId: string }> {
+  try {
+    console.log('[API] Converting resume to new via POST');
+    const cleanData: ResumeData = {
+      contactDetails: data.contactDetails,
+      linkedinProfile: data.linkedinProfile || '',
+      portfolioLinks: data.portfolioLinks || [],
+      professionalSummary: data.professionalSummary || '',
+      skills: data.skills || [],
+      workExperience: data.workExperience || [],
+      education: data.education || [],
+      relevantCourseWork: data.relevantCourseWork || '',
+      certifications: data.certifications || [],
+      references: data.references || [],
+      languages: data.languages || [],
+      awards: data.awards || [],
+      hobbies: data.hobbies || [],
+    };
+
+    const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
+    console.log(`[API] Resume converted to new with ID: ${response.id}`);
+    return { cvId: response.id };
+  } catch (error) {
+    if (error instanceof HttpError) {
+      const message = (error.data as { message?: string })?.message || 'Failed to create new resume.';
+      console.error('[API] convertResumeToNew failed:', message);
+      throw new Error(message);
+    }
+    throw error;
+  }
+}
+
 export async function submitCV(resumeId: string, data: ResumeData): Promise<{ cvId: string }> {
   try {
     // Clean data to only include ResumeData fields
@@ -130,17 +173,10 @@ export async function submitCV(resumeId: string, data: ResumeData): Promise<{ cv
         console.log(`[API] Resume ${resumeId} updated successfully`);
         return { cvId: resumeId };
       } catch (error) {
-        // If 404, the resume doesn't exist on backend - create it as new
+        // If 404, the resume doesn't exist on backend - ask user if they want to convert
         if (error instanceof HttpError && error.status === 404) {
-          console.warn(`[API] Resume ${resumeId} not found on backend (404), creating as new resume via POST`);
-          try {
-            const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
-            console.log(`[API] New resume created (fallback from 404) with ID: ${response.id}`);
-            return { cvId: response.id };
-          } catch (createError) {
-            console.error('[API] Failed to create new resume after 404:', createError);
-            throw createError;
-          }
+          console.warn(`[API] Resume ${resumeId} not found on backend (404). Asking user to convert to new resume.`);
+          throw new ResumeNotFoundError(resumeId);
         }
         console.error(`[API] PATCH failed with status ${(error as HttpError).status}:`, error);
         throw error;
