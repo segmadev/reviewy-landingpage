@@ -68,21 +68,29 @@ export async function logoutUser(): Promise<void> {
 
 export async function saveBuilderStep(resumeId: string, data: Partial<ResumeData>): Promise<string> {
   try {
+    console.log(`[API] saveBuilderStep called with resumeId: "${resumeId}"`);
+
     if (!resumeId) {
       // Create new resume
+      console.log('[API] No resumeId in saveBuilderStep, creating new resume');
       const response = (await http.post(ENDPOINTS.CREATE_RESUME, {
         contactDetails: data.contactDetails,
       })) as { id: string };
+      console.log(`[API] saveBuilderStep created new resume with ID: ${response.id}`);
       return response.id;
     } else {
       // Update existing resume
+      console.log(`[API] Updating existing resume ${resumeId} in saveBuilderStep`);
       await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), data);
+      console.log(`[API] saveBuilderStep updated resume ${resumeId} successfully`);
       return resumeId;
     }
   } catch (error) {
     if (error instanceof HttpError) {
+      console.error(`[API] saveBuilderStep failed with HTTP ${error.status}:`, error.message);
       throw new Error('Failed to save resume. Please try again.');
     }
+    console.error('[API] saveBuilderStep unexpected error:', error);
     throw error;
   }
 }
