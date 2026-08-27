@@ -116,12 +116,19 @@ function CVRow({
             <button onClick={commit} className="text-[#68AE24] shrink-0"><Check className="w-3.5 h-3.5" /></button>
           </div>
         ) : (
-          <p
-            className="text-sm font-semibold text-gray-900 truncate"
-            onDoubleClick={e => { e.stopPropagation(); setEditing(true); }}
-          >
-            {cv.name}
-          </p>
+          <div className="flex items-center gap-2 min-w-0">
+            <p
+              className="text-sm font-semibold text-gray-900 truncate"
+              onDoubleClick={e => { e.stopPropagation(); setEditing(true); }}
+            >
+              {cv.name}
+            </p>
+            {cv.isDraft && (
+              <span className="shrink-0 inline-block bg-amber-100 text-amber-700 text-[10px] font-semibold px-2 py-0.5 rounded">
+                Draft
+              </span>
+            )}
+          </div>
         )}
         <p className="text-[11px] text-gray-400 truncate mt-0.5">
           {templateInfo.name} · {relativeDate(cv.updatedAt)}
@@ -262,7 +269,14 @@ function CVDetailPanel({
       <div className="px-5 pt-4 pb-5 flex flex-col gap-3">
         {/* Name + dates */}
         <div>
-          <h3 className="text-base font-bold text-gray-900 truncate">{cv.name}</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-base font-bold text-gray-900 truncate">{cv.name}</h3>
+            {cv.isDraft && (
+              <span className="shrink-0 inline-block bg-amber-100 text-amber-700 text-[10px] font-semibold px-2 py-0.5 rounded">
+                Draft
+              </span>
+            )}
+          </div>
           <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {relativeDate(cv.updatedAt)}
@@ -427,7 +441,6 @@ export default function DashboardPage() {
       // Load local drafts for anonymous users
       const drafts = loadLibrary().map(cv => ({
         ...cv,
-        name: `${cv.name} (Draft)`,
         isDraft: true,
       }));
       setCVs(drafts);
