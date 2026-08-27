@@ -190,7 +190,8 @@ function BuilderInner() {
       );
 
       // Persist to local CV library
-      const cvId = state.submittedCvId ?? resumeId ?? generateCVId();
+      // Always prefer the backend resumeId, fall back to submitted ID if no resumeId yet
+      const cvId = resumeId || state.submittedCvId || generateCVId();
       const savedCV: SavedCV = {
         id: cvId,
         name: state.contactDetails.fullName
@@ -223,10 +224,12 @@ function BuilderInner() {
       clearActiveCV();
 
       // Submit to backend with cleaned work experience
+      // Always use the resumeId returned from backend, not locally-generated ID
       await submitCV(resumeId, { ...state, workExperience: cleanedWorkExperience } as any);
 
       success('CV saved successfully!');
-      dispatch({ type: 'SET_SUBMITTED', payload: cvId });
+      // Use the actual backend ID, not the local one
+      dispatch({ type: 'SET_SUBMITTED', payload: resumeId });
       localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
       // Clear builder cache after successful save
       localStorage.removeItem(BUILDER_CACHE_KEY);
