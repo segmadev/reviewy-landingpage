@@ -111,9 +111,19 @@ export async function submitCV(resumeId: string, data: ResumeData): Promise<{ cv
       const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
       return { cvId: response.id };
     } else {
-      // Update existing resume
-      await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), cleanData);
-      return { cvId: resumeId };
+      // Try to update existing resume
+      try {
+        await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), cleanData);
+        return { cvId: resumeId };
+      } catch (error) {
+        // If 404, the resume doesn't exist on backend - create it as new
+        if (error instanceof HttpError && error.status === 404) {
+          console.warn(`[API] Resume ${resumeId} not found on backend, creating as new resume`);
+          const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
+          return { cvId: response.id };
+        }
+        throw error;
+      }
     }
   } catch (error) {
     if (error instanceof HttpError) {
