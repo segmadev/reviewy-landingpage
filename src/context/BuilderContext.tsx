@@ -167,7 +167,7 @@ function reducer(state: BuilderState, action: Action): BuilderState {
       const cv = action.payload;
       return {
         ...initialState,
-        currentStep: 2, // Start from Contact Details (Step 2) for existing CVs
+        currentStep: 1, // Start from Job Targeting (Step 1) so user can review job description
         templateId: cv.templateId,
         templateCustomizations: (cv.templateCustomizations as Record<string, Partial<TemplateOptions>>) || {},
         jobDescription: cv.jobDescription || '',
