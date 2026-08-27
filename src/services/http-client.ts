@@ -137,6 +137,7 @@ export async function httpClient(
   }
 
   try {
+    console.log(`[HTTP] ${method} request to: ${url}`);
     let response = await fetch(url, fetchOptions);
 
     // Handle 401 - token expired, try refresh
@@ -166,6 +167,8 @@ export async function httpClient(
     if (!response.ok) {
       const errorMsg = data?.message || `HTTP Error ${response.status}`;
       console.error(`[HTTP] ${method} ${endpoint} → ${response.status}:`, errorMsg);
+      console.error(`[HTTP] Full URL was: ${url}`);
+      console.error(`[HTTP] Response data:`, data);
       throw new HttpError(response.status, data, errorMsg);
     }
 
