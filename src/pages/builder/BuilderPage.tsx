@@ -243,7 +243,7 @@ function BuilderInner() {
       localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
       // Clear builder cache after successful save
       localStorage.removeItem(BUILDER_CACHE_KEY);
-      navigate('/builder/result');
+      navigate(`/builder/result/${result.cvId}`);
     } catch (error: any) {
       const status = error?.response?.status;
       const message = error instanceof Error ? error.message : 'Failed to save CV';
@@ -287,7 +287,7 @@ function BuilderInner() {
       localStorage.removeItem(BUILDER_CACHE_KEY);
 
       setShowResumeNotFoundModal(false);
-      navigate('/builder/result');
+      navigate(`/builder/result/${result.cvId}`);
     } catch (error: any) {
       const message = error instanceof Error ? error.message : 'Failed to convert resume';
       showError(message);

@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Edit3, FilePlus, LayoutDashboard,
@@ -13,6 +13,7 @@ import { useBuilder } from '../../context/BuilderContext';
 import { sampleResumeData } from '../../services/mockData';
 import { upsertCV, generateCVId } from '../../services/cvLibrary';
 import { clearBuilderDraftTracking } from '../../hooks/useAutoSave';
+import { getResumeById } from '../../services/api';
 import type { SavedCV } from '../../types/resume';
 
 const STEPS = [
@@ -27,13 +28,33 @@ const STEPS = [
 
 export default function BuilderResultPage() {
   const navigate = useNavigate();
+  const { cvId } = useParams<{ cvId: string }>();
   const { state, dispatch } = useBuilder();
 
   const printRef   = useRef<HTMLDivElement>(null); // hidden full-scale for download
   const [showModal, setShowModal] = useState(false);
+  const [loadedCV, setLoadedCV] = useState<SavedCV | null>(null);
 
-  const cvData = state.contactDetails.fullName ? state : sampleResumeData;
-  const cvName = state.contactDetails.fullName ? `${state.contactDetails.fullName}'s CV` : 'My CV';
+  // Load real CV data from backend if cvId is provided
+  useEffect(() => {
+    if (cvId && cvId !== state.submittedCvId) {
+      getResumeById(cvId)
+        .then(cv => {
+          setLoadedCV(cv);
+          console.log('[Result] Loaded CV from backend:', cvId);
+        })
+        .catch(error => {
+          console.error('[Result] Failed to load CV from backend:', error);
+          // Fall back to state data if fetch fails
+        });
+    }
+  }, [cvId, state.submittedCvId]);
+
+  // Use loaded CV data from backend, fallback to state, then mock data
+  const cvData = loadedCV || (state.contactDetails.fullName ? state : sampleResumeData);
+  const cvName = (loadedCV || state.contactDetails.fullName)
+    ? `${(loadedCV || state).contactDetails.fullName}'s CV`
+    : 'My CV';
 
   const persistCV = (): SavedCV => {
     const cvId = state.submittedCvId ?? generateCVId();

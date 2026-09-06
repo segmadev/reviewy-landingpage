@@ -14,7 +14,7 @@ const router = createBrowserRouter([
   { path: '/',                      element: <LandingPage />            },
   { path: '/auth/login',            element: <LoginPage />              },
   { path: '/builder/template',      element: <ChooseTemplatePage />     },
-  { path: '/builder/result',        element: <BuilderResultPage />      },
+  { path: '/builder/result/:cvId?', element: <BuilderResultPage />      },
   { path: '/builder/:id?',          element: <BuilderPage />            },
   { path: '/dashboard',             element: <ProtectedRoute><DashboardPage /></ProtectedRoute>          },
   { path: '/dashboard/account',     element: <ProtectedRoute><AccountPage /></ProtectedRoute>            },
