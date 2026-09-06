@@ -9,8 +9,18 @@ import { saveAnonymousDraft } from '../services/anonymousSession';
 const AUTOSAVE_DELAY = 1000; // 1 second debounce
 export const BUILDER_CACHE_KEY = 'rym_builder_cache';
 
+// Clears this hook's in-progress resume-id tracking. Must be called whenever the
+// user explicitly starts a brand-new CV (dispatching NEW_CV) — otherwise the
+// resume id left over from whatever was being edited/autosaved before stays in
+// localStorage and the next autosave tick silently reuses it, patching the wrong
+// resume on the backend instead of creating a new one.
+export function clearBuilderDraftTracking(): void {
+  localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
+  localStorage.removeItem(BUILDER_CACHE_KEY);
+}
+
 export function useAutoSave() {
-  const { state } = useBuilder();
+  const { state, dispatch } = useBuilder();
   const { isAuthenticated } = useAuth();
   const { error: showError } = useToast();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -77,12 +87,22 @@ export function useAutoSave() {
         localStorage.setItem(BUILDER_CACHE_KEY, JSON.stringify(cacheData));
 
         if (isAuthenticated) {
-          // Save to backend for authenticated users
-          const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
+          // Save to backend for authenticated users.
+          // state.submittedCvId is the authoritative id for "which resume is loaded"
+          // (set by LOAD_CV when opening an existing resume, or by this hook itself
+          // once autosave creates one) — it must take priority over the localStorage
+          // slot below, which only exists to survive a debounce/unmount between the
+          // first autosave tick and state catching up, and can otherwise go stale
+          // and leak into a different resume's autosave after switching CVs.
+          const resumeId = state.submittedCvId || localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
           const newResumeId = await saveBuilderStep(resumeId, state);
 
-          // Store resume ID for next saves
+          // Store resume ID for next saves, and keep state in sync so subsequent
+          // ticks (and any other code reading state.submittedCvId) see it too.
           localStorage.setItem(STORAGE_KEYS.RESUMED_ID, newResumeId);
+          if (newResumeId && newResumeId !== state.submittedCvId) {
+            dispatch({ type: 'SET_SUBMITTED', payload: newResumeId });
+          }
         } else {
           // Save to localStorage for anonymous users
           saveAnonymousDraft(state);

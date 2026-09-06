@@ -185,8 +185,12 @@ function BuilderInner() {
 
     dispatch({ type: 'SET_SUBMITTING', payload: true });
     try {
-      // Get resume ID from localStorage (set by auto-save)
-      const resumeId = localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
+      // state.submittedCvId is the authoritative id for the resume currently loaded
+      // (set by LOAD_CV when opening an existing one, or by auto-save once it creates
+      // one) — it must take priority over the auto-save localStorage slot, which can
+      // go stale after switching between CVs and would otherwise target the wrong
+      // resume here.
+      const resumeId = state.submittedCvId || localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
 
       // Filter out empty work experience entries (entries without a job title)
       const cleanedWorkExperience = state.workExperience.filter(
@@ -229,11 +233,13 @@ function BuilderInner() {
 
       // Submit to backend with cleaned work experience
       // Always use the resumeId returned from backend, not locally-generated ID
-      await submitCV(resumeId, { ...state, workExperience: cleanedWorkExperience } as any);
+      const result = await submitCV(resumeId, { ...state, workExperience: cleanedWorkExperience } as any);
 
       success('CV saved successfully!');
-      // Use the actual backend ID, not the local one
-      dispatch({ type: 'SET_SUBMITTED', payload: resumeId });
+      // Use the id the backend actually returned — when resumeId was empty this
+      // just created a brand-new resume, so result.cvId is the only place its real
+      // id exists; the local resumeId variable would be empty/stale here.
+      dispatch({ type: 'SET_SUBMITTED', payload: result.cvId });
       localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
       // Clear builder cache after successful save
       localStorage.removeItem(BUILDER_CACHE_KEY);

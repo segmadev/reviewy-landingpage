@@ -16,6 +16,7 @@ import {
   loadLibrary, duplicateCV, renameCV, setActiveCV,
 } from '../../services/cvLibrary';
 import { getUserResumes, deleteResume } from '../../services/api';
+import { clearBuilderDraftTracking } from '../../hooks/useAutoSave';
 import type { SavedCV } from '../../types/resume';
 import { TEMPLATES } from '../../components/templates';
 
@@ -459,7 +460,11 @@ export default function DashboardPage() {
     : cvs;
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
-  const handleCreateNew = () => { dispatch({ type: 'NEW_CV' }); navigate('/builder'); };
+  const handleCreateNew = () => {
+    dispatch({ type: 'NEW_CV' });
+    clearBuilderDraftTracking();
+    navigate('/builder');
+  };
 
   const handleEdit = (cv: SavedCV) => {
     dispatch({ type: 'LOAD_CV', payload: cv });

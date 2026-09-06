@@ -12,6 +12,7 @@ import DownloadMenu from '../../components/ui/DownloadMenu';
 import { useBuilder } from '../../context/BuilderContext';
 import { sampleResumeData } from '../../services/mockData';
 import { upsertCV, generateCVId } from '../../services/cvLibrary';
+import { clearBuilderDraftTracking } from '../../hooks/useAutoSave';
 import type { SavedCV } from '../../types/resume';
 
 const STEPS = [
@@ -148,7 +149,7 @@ export default function BuilderResultPage() {
             </button>
 
             <button
-              onClick={() => { dispatch({ type: 'NEW_CV' }); navigate('/builder'); }}
+              onClick={() => { dispatch({ type: 'NEW_CV' }); clearBuilderDraftTracking(); navigate('/builder'); }}
               className="w-full flex items-center justify-center gap-2 py-2 text-sm"
               style={{ color: 'rgba(255,255,255,0.3)' }}
             >
@@ -300,7 +301,7 @@ export default function BuilderResultPage() {
             </button>
 
             <button
-              onClick={() => { dispatch({ type: 'NEW_CV' }); navigate('/builder'); }}
+              onClick={() => { dispatch({ type: 'NEW_CV' }); clearBuilderDraftTracking(); navigate('/builder'); }}
               className="w-full flex items-center justify-center gap-2 py-2 text-sm"
               style={{ color: 'rgba(255,255,255,0.3)' }}
             >
