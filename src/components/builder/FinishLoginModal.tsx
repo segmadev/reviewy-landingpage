@@ -127,7 +127,7 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-gray-900">
-                  {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  {authMode === 'login' ? 'Sign in to finish your CV' : 'Create an account to finish'}
                 </h2>
                 <button
                   onClick={onClose}
@@ -139,6 +139,12 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
 
               {/* Content */}
               <div className="p-6">
+                <p className="mb-4 text-sm leading-relaxed text-gray-600">
+                  {authMode === 'login'
+                    ? 'Sign in to save your CV and continue to the review.'
+                    : 'Create an account to save your CV and continue to the review.'}
+                </p>
+
                 {authError && (
                   <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm">
                     {authError}

@@ -8,6 +8,18 @@ import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import type { Certification, Reference } from '../../../types/resume';
 
+export interface AdditionalInfoSubmission {
+  languages: string[];
+  certifications: Certification[];
+  awards: string[];
+  hobbies: string[];
+  references: Reference[];
+}
+
+interface Step7AdditionalProps {
+  onFinish: (additionalInfo: AdditionalInfoSubmission) => void;
+}
+
 function newCert(): Certification {
   return { id: Date.now().toString(), title: '', issuer: '', date: '' };
 }
@@ -15,8 +27,8 @@ function newRef(): Reference {
   return { id: Date.now().toString(), name: '', position: '', company: '', contact: '' };
 }
 
-export default function Step7Additional() {
-  const { state, dispatch, nextStep, prevStep } = useBuilder();
+export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
+  const { state, dispatch, prevStep } = useBuilder();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
   const [languages, setLanguages] = useState<string[]>(state.languages ?? []);
@@ -49,13 +61,20 @@ export default function Step7Additional() {
       }
     }
 
-    // Only dispatch enabled sections
-    dispatch({ type: 'SET_LANGUAGES', payload: toggles.languages ? languages : [] });
-    dispatch({ type: 'SET_CERTIFICATIONS', payload: toggles.certifications ? certs : [] });
-    dispatch({ type: 'SET_AWARDS', payload: toggles.awards ? awards : [] });
-    dispatch({ type: 'SET_HOBBIES', payload: toggles.hobbies ? hobbies : [] });
-    dispatch({ type: 'SET_REFERENCES', payload: toggles.references ? refs : [] });
-    nextStep();
+    const additionalInfo: AdditionalInfoSubmission = {
+      languages: toggles.languages ? languages : [],
+      certifications: toggles.certifications ? certs : [],
+      awards: toggles.awards ? awards : [],
+      hobbies: toggles.hobbies ? hobbies : [],
+      references: toggles.references ? refs : [],
+    };
+
+    dispatch({ type: 'SET_LANGUAGES', payload: additionalInfo.languages });
+    dispatch({ type: 'SET_CERTIFICATIONS', payload: additionalInfo.certifications });
+    dispatch({ type: 'SET_AWARDS', payload: additionalInfo.awards });
+    dispatch({ type: 'SET_HOBBIES', payload: additionalInfo.hobbies });
+    dispatch({ type: 'SET_REFERENCES', payload: additionalInfo.references });
+    onFinish(additionalInfo);
   };
 
   const sections = [
@@ -216,7 +235,7 @@ export default function Step7Additional() {
         ))}
       </div>
 
-      <div className="hidden lg:flex justify-between mt-8 pb-6 gap-3">
+      <div className="flex justify-between mt-8 pb-6 gap-3">
         <Button variant="outline" size="md" onClick={prevStep}>← Previous</Button>
         <Button size="lg" onClick={handleNext}>Finish & Review →</Button>
       </div>

@@ -19,7 +19,7 @@ import Step3WorkHistory from '../../components/builder/steps/Step3WorkHistory';
 import Step4Education from '../../components/builder/steps/Step4Education';
 import Step5Skills from '../../components/builder/steps/Step5Skills';
 import Step6Summary from '../../components/builder/steps/Step6Summary';
-import Step7Additional from '../../components/builder/steps/Step7Additional';
+import Step7Additional, { type AdditionalInfoSubmission } from '../../components/builder/steps/Step7Additional';
 import { submitCV, getResumeById, getUserCreditBalance, convertResumeToNew, ResumeNotFoundError } from '../../services/api';
 import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
 import { useAutoSave, BUILDER_CACHE_KEY } from '../../hooks/useAutoSave';
@@ -29,7 +29,7 @@ import { STORAGE_KEYS } from '../../config/api.config';
 import { getAnonymousDraft, isAnonymousSession } from '../../services/anonymousSession';
 import AnonymousSessionWarning from '../../components/AnonymousSessionWarning';
 import ResumeNotFoundModal from '../../components/builder/ResumeNotFoundModal';
-import type { SavedCV } from '../../types/resume';
+import type { ResumeData, SavedCV } from '../../types/resume';
 
 const DARK_PANEL = '#1c1c1e';
 
@@ -165,17 +165,7 @@ function BuilderInner() {
 
   const currentStep = state.currentStep;
 
-  const stepComponents: Record<number, React.ReactElement> = {
-    1: <Step1JobTargeting />,
-    2: <Step2Contact />,
-    3: <Step3WorkHistory />,
-    4: <Step4Education />,
-    5: <Step5Skills />,
-    6: <Step6Summary />,
-    7: <Step7Additional />,
-  };
-
-  const handleFinish = async () => {
+  const handleFinish = async (additionalInfo?: AdditionalInfoSubmission) => {
     // Only require job description for new CVs, not when editing existing ones
     const isNewCV = !state.submittedCvId;
     if (isNewCV && (!state.jobDescription || state.jobDescription.trim() === '')) {
@@ -196,6 +186,22 @@ function BuilderInner() {
       const cleanedWorkExperience = state.workExperience.filter(
         (exp) => exp.position && exp.position.trim().length > 0
       );
+
+      const resumeData: ResumeData = {
+        contactDetails: state.contactDetails,
+        linkedinProfile: state.linkedinProfile,
+        portfolioLinks: state.portfolioLinks,
+        professionalSummary: state.professionalSummary,
+        skills: state.skills,
+        workExperience: cleanedWorkExperience,
+        education: state.education,
+        relevantCourseWork: state.relevantCourseWork,
+        certifications: additionalInfo?.certifications ?? state.certifications,
+        references: additionalInfo?.references ?? state.references,
+        languages: additionalInfo?.languages ?? state.languages ?? [],
+        awards: additionalInfo?.awards ?? state.awards ?? [],
+        hobbies: additionalInfo?.hobbies ?? state.hobbies ?? [],
+      };
 
       // Persist to local CV library
       // Always prefer the backend resumeId, fall back to submitted ID if no resumeId yet
@@ -218,11 +224,11 @@ function BuilderInner() {
         workExperience: cleanedWorkExperience,
         education: state.education,
         relevantCourseWork: state.relevantCourseWork,
-        certifications: state.certifications,
-        references: state.references,
-        languages: state.languages ?? [],
-        awards: state.awards ?? [],
-        hobbies: state.hobbies ?? [],
+        certifications: resumeData.certifications,
+        references: resumeData.references,
+        languages: resumeData.languages ?? [],
+        awards: resumeData.awards ?? [],
+        hobbies: resumeData.hobbies ?? [],
         jobDescription: state.jobDescription,
         toggles: state.toggles,
         createdAt: new Date().toISOString(),
@@ -233,7 +239,7 @@ function BuilderInner() {
 
       // Submit to backend with cleaned work experience
       // Always use the resumeId returned from backend, not locally-generated ID
-      const result = await submitCV(resumeId, { ...state, workExperience: cleanedWorkExperience } as any);
+      const result = await submitCV(resumeId, resumeData);
 
       success('CV saved successfully!');
       // Use the id the backend actually returned — when resumeId was empty this
@@ -244,8 +250,7 @@ function BuilderInner() {
       // Clear builder cache after successful save
       localStorage.removeItem(BUILDER_CACHE_KEY);
       navigate(`/builder/result/${result.cvId}`);
-    } catch (error: any) {
-      const status = error?.response?.status;
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to save CV';
 
       // Check if resume was not found on backend (404)
@@ -258,7 +263,7 @@ function BuilderInner() {
       }
 
       // Check if error is 401 Unauthorized - session expired or not authenticated
-      if (status === 401 || message.includes('401') || message.includes('Unauthorized')) {
+      if (message.includes('401') || message.includes('Unauthorized')) {
         showError('Please log in to save your CV.');
         dispatch({ type: 'SET_SUBMITTING', payload: false });
         // Reset to step 7 so user can try again after login
@@ -279,7 +284,7 @@ function BuilderInner() {
         (exp) => exp.position && exp.position.trim().length > 0
       );
 
-      const result = await convertResumeToNew({ ...state, workExperience: cleanedWorkExperience } as any);
+      const result = await convertResumeToNew({ ...state, workExperience: cleanedWorkExperience });
 
       success('Resume converted to new successfully!');
       dispatch({ type: 'SET_SUBMITTED', payload: result.cvId });
@@ -288,7 +293,7 @@ function BuilderInner() {
 
       setShowResumeNotFoundModal(false);
       navigate(`/builder/result/${result.cvId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to convert resume';
       showError(message);
     } finally {
@@ -301,14 +306,18 @@ function BuilderInner() {
     setResumeNotFoundId('');
   };
 
+  const requestFinish = (additionalInfo?: AdditionalInfoSubmission) => {
+    if (!isAuthenticated || !user?.id) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    void handleFinish(additionalInfo);
+  };
+
   const handleNext = () => {
     if (currentStep >= 7) {
-      // Check if user is authenticated before allowing finish
-      if (!isAuthenticated || !user?.id) {
-        setShowLoginModal(true);
-        return;
-      }
-      handleFinish();
+      requestFinish();
     } else {
       nextStep();
     }
@@ -318,13 +327,19 @@ function BuilderInner() {
     // Modal is already closed by FinishLoginModal component
     // Wait for auth state to fully update before proceeding with finish
     setTimeout(() => {
-      handleFinish();
+      void handleFinish();
     }, 500);
   };
 
-  React.useEffect(() => {
-    if (currentStep > 7) handleFinish();
-  }, [currentStep]);
+  const stepComponents: Record<number, React.ReactElement> = {
+    1: <Step1JobTargeting />,
+    2: <Step2Contact />,
+    3: <Step3WorkHistory />,
+    4: <Step4Education />,
+    5: <Step5Skills />,
+    6: <Step6Summary />,
+    7: <Step7Additional onFinish={requestFinish} />,
+  };
 
   const currentTemplateName = TEMPLATES.find(t => t.id === state.templateId)?.name ?? 'Classic';
 
@@ -437,30 +452,30 @@ function BuilderInner() {
               </AnimatePresence>
             </div>
 
-            {/* Mobile bottom navigation */}
-            <div className="lg:hidden shrink-0 flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-              {currentStep > 1 && (
+            {/* Mobile bottom navigation for steps without in-form actions */}
+            {currentStep < 7 && (
+              <div className="lg:hidden shrink-0 flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+                {currentStep > 1 && (
+                  <button
+                    onClick={prevStep}
+                    className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Previous
+                  </button>
+                )}
+                <div className="flex-1" />
                 <button
-                  onClick={prevStep}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                  onClick={handleNext}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold text-sm px-5 py-2 rounded-full transition-colors shadow-lg shadow-primary/30"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </button>
-              )}
-              <div className="flex-1" />
-              <button
-                onClick={handleNext}
-                className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold text-sm px-5 py-2 rounded-full transition-colors shadow-lg shadow-primary/30"
-              >
-                {currentStep >= 7 ? 'Finish & Review' : 'Next'}
-                {currentStep < 7 && (
+                  Next
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8h10M9 4l4 4-4 4" />
                   </svg>
-                )}
-              </button>
-            </div>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── Mobile preview (toggleable on mobile) ────────── */}
@@ -564,23 +579,6 @@ function BuilderInner() {
               </div>
             </div>
 
-            {/* Next button */}
-            <div
-              className="shrink-0 flex items-center justify-end px-5 py-4 border-t"
-              style={{ borderColor: 'rgba(255,255,255,0.07)', backgroundColor: DARK_PANEL }}
-            >
-              <button
-                onClick={handleNext}
-                className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold text-sm px-7 py-2.5 rounded-full transition-colors shadow-lg shadow-primary/30"
-              >
-                {currentStep >= 7 ? 'Finish & Review' : 'Next'}
-                {currentStep < 7 && (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8h10M9 4l4 4-4 4" />
-                  </svg>
-                )}
-              </button>
-            </div>
           </div>
 
         </div>
