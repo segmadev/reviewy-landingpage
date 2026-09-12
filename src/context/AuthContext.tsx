@@ -3,6 +3,7 @@ import type { User } from '../types/resume';
 import { STORAGE_KEYS } from '../config/api.config';
 import { tokenManager, http } from '../services/http-client';
 import { getUserProfile } from '../services/api';
+import { clearSignedInUserStorage } from '../services/userSessionStorage';
 
 interface AuthState {
   user: User | null;
@@ -128,29 +129,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.accessToken]);
 
+  const currentUserId = state.user?.id;
+
   const logout = useCallback(async () => {
-    setState((prev) => ({ ...prev, isLoading: true }));
-    try {
-      // Call backend logout endpoint
-      if (state.user?.id) {
-        try {
-          await http.delete(`/user/logout/${state.user.id}`);
-        } catch (error) {
-          // Continue with logout even if backend call fails
-          console.error('Logout API call failed:', error);
-        }
+    // Start the request while the current access token is still available, then
+    // clear the browser session synchronously instead of waiting on the network.
+    const logoutRequest = currentUserId
+      ? http.delete(`/user/logout/${currentUserId}`)
+      : null;
+
+    tokenManager.clearTokens();
+    clearSignedInUserStorage();
+    setState({
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+
+    if (logoutRequest) {
+      try {
+        await logoutRequest;
+      } catch (error) {
+        // The local logout is already complete even if the backend is unavailable.
+        console.error('Logout API call failed:', error);
       }
-    } finally {
-      tokenManager.clearTokens();
-      setState({
-        accessToken: null,
-        refreshToken: null,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
     }
-  }, [state.user?.id]);
+  }, [currentUserId]);
 
   return (
     <AuthContext.Provider value={{ ...state, login, logout, fetchProfile }}>
@@ -159,6 +165,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// The provider and hook intentionally share one public authentication module.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');

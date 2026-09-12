@@ -38,22 +38,29 @@ const setStoredToken = (type: 'access' | 'refresh', token: string): void => {
   localStorage.setItem(key, token);
 };
 
+let authStorageGeneration = 0;
+
 const clearTokens = (): void => {
-  localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.USER);
+  authStorageGeneration += 1;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER);
+  } catch (error) {
+    console.error('Failed to clear authentication storage:', error);
+  }
 };
 
 // Global token refresh flag to prevent multiple refresh attempts
 let isRefreshing = false;
-let refreshSubscribers: Array<() => void> = [];
+let refreshSubscribers: Array<(refreshed: boolean) => void> = [];
 
-const subscribeToRefresh = (callback: () => void) => {
+const subscribeToRefresh = (callback: (refreshed: boolean) => void) => {
   refreshSubscribers.push(callback);
 };
 
-const notifyRefreshSubscribers = () => {
-  refreshSubscribers.forEach((cb) => cb());
+const notifyRefreshSubscribers = (refreshed: boolean) => {
+  refreshSubscribers.forEach((cb) => cb(refreshed));
   refreshSubscribers = [];
 };
 
@@ -61,11 +68,13 @@ const notifyRefreshSubscribers = () => {
 async function refreshAccessToken(): Promise<boolean> {
   if (isRefreshing) {
     return new Promise((resolve) => {
-      subscribeToRefresh(() => resolve(true));
+      subscribeToRefresh(resolve);
     });
   }
 
   isRefreshing = true;
+  const generationAtStart = authStorageGeneration;
+  let refreshed = false;
 
   try {
     const refreshToken = getStoredToken('refresh');
@@ -82,23 +91,30 @@ async function refreshAccessToken(): Promise<boolean> {
 
     if (response.ok) {
       const data = (await response.json()) as TokenResponse;
+
+      // Logout invalidates the generation immediately. Never allow a refresh
+      // that started for the previous user to recreate their stored session.
+      if (generationAtStart !== authStorageGeneration) {
+        return false;
+      }
+
       setStoredToken('access', data.accessToken);
       if (data.refreshToken) {
         setStoredToken('refresh', data.refreshToken);
       }
-      isRefreshing = false;
-      notifyRefreshSubscribers();
+      refreshed = true;
       return true;
     }
 
     clearTokens();
-    isRefreshing = false;
     return false;
   } catch (error) {
     console.error('Token refresh failed:', error);
     clearTokens();
-    isRefreshing = false;
     return false;
+  } finally {
+    isRefreshing = false;
+    notifyRefreshSubscribers(refreshed);
   }
 }
 
