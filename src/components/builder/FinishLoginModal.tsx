@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { loginJobSeeker, registerUser, type SignupData } from '../../services/api';
 import { Button } from '../ui/Button';
+import LegalConsentCheckbox from '../legal/LegalConsentCheckbox';
 
 interface FinishLoginModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({ email: '', password: '' });
+  const [hasAcceptedLegal, setHasAcceptedLegal] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +63,14 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+
+    if (!hasAcceptedLegal) {
+      const message = 'Please agree to the Terms & Conditions and Privacy Policy to create an account.';
+      setAuthError(message);
+      showError(message);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -80,6 +90,7 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
 
       showSuccess('Account created successfully!');
       setSignupForm({ email: '', password: '' });
+      setHasAcceptedLegal(false);
 
       setTimeout(() => {
         onLoginSuccess();
@@ -136,7 +147,7 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
 
                 {authMode === 'login' ? (
                   // LOGIN FORM
-                  <form onSubmit={handleLogin} className="space-y-4">
+                  <form onSubmit={handleLogin} noValidate className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                       <div className="relative">
@@ -184,7 +195,7 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
                   </form>
                 ) : (
                   // SIGNUP FORM
-                  <form onSubmit={handleSignup} className="space-y-4">
+                  <form onSubmit={handleSignup} noValidate className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                       <div className="relative">
@@ -226,7 +237,13 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
                       </div>
                     </div>
 
-                    <Button type="submit" disabled={loading} size="lg" className="w-full mt-6">
+                    <LegalConsentCheckbox
+                      id="finish-signup-legal-consent"
+                      checked={hasAcceptedLegal}
+                      onChange={setHasAcceptedLegal}
+                    />
+
+                    <Button type="submit" disabled={loading || !hasAcceptedLegal} size="lg" className="w-full mt-6">
                       {loading ? 'Creating Account…' : 'Create Account'}
                     </Button>
                   </form>

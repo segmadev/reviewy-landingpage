@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { loginJobSeeker, registerUser, type SignupData } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import LegalConsentCheckbox from '../../components/legal/LegalConsentCheckbox';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function LoginPage() {
     email: '',
     password: '',
   });
+  const [hasAcceptedLegal, setHasAcceptedLegal] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,6 +87,13 @@ export default function LoginPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!hasAcceptedLegal) {
+      const message = 'Please agree to the Terms & Conditions and Privacy Policy to create an account.';
+      setError(message);
+      showError(message);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -155,7 +164,7 @@ export default function LoginPage() {
 
           {isSignup ? (
             // SIGNUP FORM
-            <form onSubmit={handleSignup} className="space-y-4">
+            <form onSubmit={handleSignup} noValidate className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <div className="relative">
@@ -197,9 +206,15 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              <LegalConsentCheckbox
+                id="account-signup-legal-consent"
+                checked={hasAcceptedLegal}
+                onChange={setHasAcceptedLegal}
+              />
+
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !hasAcceptedLegal}
                 size="lg"
                 className="w-full mt-4"
               >
@@ -208,7 +223,7 @@ export default function LoginPage() {
             </form>
           ) : (
             // LOGIN FORM
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} noValidate className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email / Username

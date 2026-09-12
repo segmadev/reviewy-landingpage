@@ -7,7 +7,6 @@ import WhatYouGet from '../components/WhatYouGet';
 import Comparison from '../components/Comparison';
 import Testimonials from '../components/Testimonials';
 import ClosingCTA from '../components/ClosingCTA';
-import Footer from '../components/Footer';
 
 export default function LandingPage() {
   return (
@@ -23,7 +22,6 @@ export default function LandingPage() {
         <div id="testimonials"><Testimonials /></div>
         <ClosingCTA />
       </main>
-      <Footer />
     </div>
   );
 }

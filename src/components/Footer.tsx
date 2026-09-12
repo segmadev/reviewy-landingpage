@@ -1,7 +1,33 @@
 import React from 'react';
-import { Instagram, Facebook } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { LEGAL_LINKS } from '../config/legal';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  variant?: 'marketing' | 'compact';
+}
+
+const Footer: React.FC<FooterProps> = ({ variant = 'marketing' }) => {
+  if (variant === 'compact') {
+    return (
+      <footer className="border-t border-gray-200 bg-white px-4 py-5 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-xs text-gray-400">© {new Date().getFullYear()} ReviewyMe</p>
+          <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            {LEGAL_LINKS.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className="text-xs font-medium text-gray-500 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className="bg-white border-t border-gray-100 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,27 +38,21 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Links */}
-          <div className="flex flex-wrap justify-center gap-8 text-sm font-medium text-gray-600">
-            {['Privacy Notice', 'Terms of Use', 'GDPR Compliance', 'Contact', 'Resources', 'Support'].map((item) => (
-              <a key={item} href="#" className="hover:text-primary transition-colors">
-                {item}
-              </a>
+          <nav aria-label="Legal" className="flex flex-wrap justify-center gap-8 text-sm font-medium text-gray-600">
+            {LEGAL_LINKS.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className="hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                {item.label}
+              </Link>
             ))}
-          </div>
-
-          {/* Socials */}
-          <div className="flex items-center gap-4">
-            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all">
-              <Instagram className="w-5 h-5" />
-            </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all">
-              <Facebook className="w-5 h-5" />
-            </a>
-          </div>
+          </nav>
         </div>
 
         <div className="text-center text-sm text-gray-400 border-t border-gray-100 pt-8">
-          © 2025 ReviewyMe. All rights reserved.
+          © {new Date().getFullYear()} ReviewyMe. All rights reserved.
         </div>
       </div>
     </footer>

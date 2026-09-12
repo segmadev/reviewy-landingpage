@@ -168,9 +168,12 @@ export default function AccountPage() {
                 {initials}
               </div>
               <button
-                className="absolute bottom-0 right-0 w-6 sm:w-7 h-6 sm:h-7 rounded-full flex items-center justify-center shadow"
+                type="button"
+                disabled
+                aria-label="Change photo (coming soon)"
+                className="absolute bottom-0 right-0 w-6 sm:w-7 h-6 sm:h-7 rounded-full flex items-center justify-center shadow opacity-60 cursor-not-allowed"
                 style={{ background: '#68AE24' }}
-                title="Change photo"
+                title="Change photo is coming soon"
               >
                 <Camera className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-white" />
               </button>

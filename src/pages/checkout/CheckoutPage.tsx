@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext';
 import { http } from '../../services/http-client';
 import { ENDPOINTS } from '../../config/api.config';
 import type { Product } from '../../hooks/usePayments';
+import RefundDisclosure from '../../components/legal/RefundDisclosure';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -106,10 +107,11 @@ export default function CheckoutPage() {
             {/* Product Cards */}
             <div className="space-y-4">
               {products.map((product) => (
-                <motion.div
+                <motion.button
+                  type="button"
                   key={product.id}
                   onClick={() => handleSelectProduct(product.id)}
-                  className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                  className={`w-full p-6 rounded-xl border-2 cursor-pointer text-left transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                     selectedProductId === product.id
                       ? 'border-primary bg-primary/5'
                       : 'border-gray-200 bg-white hover:border-gray-300'
@@ -153,7 +155,7 @@ export default function CheckoutPage() {
                       ))}
                     </div>
                   )}
-                </motion.div>
+                </motion.button>
               ))}
             </div>
 
@@ -188,6 +190,7 @@ export default function CheckoutPage() {
                 >
                   {processing ? 'Processing...' : 'Complete Purchase'}
                 </Button>
+                <RefundDisclosure />
               </motion.div>
             )}
           </motion.div>

@@ -16,6 +16,8 @@ import { useToast } from '../context/ToastContext';
 import { getActiveProducts, loginJobSeeker, registerUser, initiatePayment, verifyPayment, type SignupData } from '../services/api';
 import { Button } from './ui/Button';
 import type { Product } from '../types/resume';
+import LegalConsentCheckbox from './legal/LegalConsentCheckbox';
+import RefundDisclosure from './legal/RefundDisclosure';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -55,6 +57,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     email: '',
     password: '',
   });
+  const [hasAcceptedLegal, setHasAcceptedLegal] = useState(false);
 
   // Load products when modal opens and user is authenticated
   useEffect(() => {
@@ -67,7 +70,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       (async () => {
         try {
           const verification = await verifyPayment(pendingTransactionId);
-          const status = (verification as any).paymentStatus || verification.status;
+          const status = verification.paymentStatus || verification.status;
 
           if (status === 'SUCCESS' || status === 'success') {
             setStep('payment-success');
@@ -145,6 +148,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     e.preventDefault();
     setAuthError('');
 
+    if (!hasAcceptedLegal) {
+      const message = 'Please agree to the Terms & Conditions and Privacy Policy to create an account.';
+      setAuthError(message);
+      showError(message);
+      return;
+    }
+
     setLoading(true);
     try {
       const signupData: SignupData = {
@@ -168,6 +178,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setProducts(prods);
       setStep('products');
       setSignupForm({ email: '', password: '' });
+      setHasAcceptedLegal(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed. Please try again.';
       setAuthError(message);
@@ -213,7 +224,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           try {
             // Check if payment was verified
             const verification = await verifyPayment(response.transactionId);
-            const status = (verification as any).paymentStatus || verification.status;
+            const status = verification.paymentStatus || verification.status;
 
             if (status === 'SUCCESS' || status === 'success') {
               clearInterval(pollPaymentStatus);
@@ -225,7 +236,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 onClose();
               }, 2000);
             }
-          } catch (error) {
+          } catch {
             console.log('Payment verification pending...');
           }
         }, 2000); // Check every 2 seconds
@@ -252,9 +263,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setVerifying(true);
     try {
       const verification = await verifyPayment(transactionId);
-      const status = (verification as any).paymentStatus || verification.status;
+      const status = verification.paymentStatus || verification.status;
 
-      setPaymentStatus(status);
+      setPaymentStatus(status ?? null);
 
       if (status === 'SUCCESS' || status === 'success') {
         setStep('payment-success');
@@ -325,7 +336,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 )}
 
                 {authMode === 'login' ? (
-                  <form onSubmit={handleLogin} className="space-y-4">
+                  <form onSubmit={handleLogin} noValidate className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Email
@@ -379,7 +390,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     </Button>
                   </form>
                 ) : (
-                  <form onSubmit={handleSignup} className="space-y-3">
+                  <form onSubmit={handleSignup} noValidate className="space-y-3">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
                       <div className="relative">
@@ -421,9 +432,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       </div>
                     </div>
 
+                    <LegalConsentCheckbox
+                      id="payment-signup-legal-consent"
+                      checked={hasAcceptedLegal}
+                      onChange={setHasAcceptedLegal}
+                    />
+
                     <Button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || !hasAcceptedLegal}
                       size="lg"
                       className="w-full mt-2"
                     >
@@ -565,6 +582,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     </p>
                   )}
                 </div>
+                {products.length > 0 && <RefundDisclosure compact />}
               </div>
             )}
 
