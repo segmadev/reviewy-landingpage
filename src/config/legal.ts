@@ -19,22 +19,22 @@ export const LEGAL_DOCUMENTS: Record<
 > = {
   privacy: {
     title: 'Privacy Policy',
-    description: 'ReviewyMe’s approved privacy information will be published on this page.',
+    description: '',
   },
   terms: {
     title: 'Terms & Conditions',
-    description: 'ReviewyMe’s approved terms and conditions will be published on this page.',
+    description: '',
   },
   disclaimer: {
     title: 'Disclaimer',
-    description: 'ReviewyMe’s approved disclaimer will be published on this page.',
+    description: '',
   },
   cookies: {
     title: 'Cookie Policy',
-    description: 'ReviewyMe’s approved cookie and local-storage information will be published on this page.',
+    description: '',
   },
   refunds: {
     title: 'Refund Policy',
-    description: 'ReviewyMe’s approved refund policy will be published on this page.',
+    description: '',
   },
 };
