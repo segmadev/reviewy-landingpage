@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FilePlus, Edit3, Trash2, FileText, Eye, Copy,
-  MoreVertical, Check, X, Search, Calendar, Layers, ChevronLeft, Menu,
+  MoreVertical, Check, X, Search, Layers, ChevronLeft, Menu, Briefcase,
 } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import CVPreview from '../../components/builder/CVPreview';
@@ -534,12 +534,13 @@ export default function DashboardPage() {
   };
 
   // ── Stats ──────────────────────────────────────────────────────────────────────
+  // Calculate total work experiences across all CVs
+  const totalJobs = cvs.reduce((sum, cv) => sum + (cv.workExperience?.length || 0), 0);
+
   const statsItems = cvs.length > 0 ? [
-    { icon: <FileText className="w-4 h-4" />, label: 'Total CVs',       value: cvs.length,                                         text: false },
-    { icon: <Layers   className="w-4 h-4" />, label: 'Templates Used',  value: new Set(cvs.map(c => c.templateId)).size,            text: false },
-    { icon: <Calendar className="w-4 h-4" />, label: 'Last Updated',
-      value: new Date(Math.max(...cvs.map(c => new Date(c.updatedAt).getTime())))
-               .toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),                                                    text: true  },
+    { icon: <FileText className="w-4 h-4" />, label: 'Total CVs',       value: cvs.length,      text: false },
+    { icon: <Layers   className="w-4 h-4" />, label: 'Templates Used',  value: new Set(cvs.map(c => c.templateId)).size, text: false },
+    { icon: <Briefcase className="w-4 h-4" />, label: 'Total Positions', value: totalJobs,       text: false },
   ] : [];
 
   return (
