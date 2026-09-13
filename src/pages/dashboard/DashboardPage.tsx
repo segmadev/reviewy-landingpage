@@ -21,21 +21,21 @@ import type { SavedCV } from '../../types/resume';
 import { TEMPLATES } from '../../components/templates';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function relativeDate(iso: string | undefined) {
-  if (!iso) return 'Date unknown';
+// Generate content summary for CV
+function getContentSummary(cv: SavedCV) {
+  const parts: string[] = [];
 
-  const d = new Date(iso);
-
-  // Handle invalid date
-  if (isNaN(d.getTime())) {
-    return 'Date unknown';
+  if (cv.workExperience?.length) {
+    parts.push(`${cv.workExperience.length} job${cv.workExperience.length !== 1 ? 's' : ''}`);
+  }
+  if (cv.education?.length) {
+    parts.push(`${cv.education.length} edu${cv.education.length !== 1 ? 's' : ''}`);
+  }
+  if (cv.skills?.length) {
+    parts.push(`${cv.skills.length} skill${cv.skills.length !== 1 ? 's' : ''}`);
   }
 
-  const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
-  if (days === 0) return 'Updated today';
-  if (days === 1) return 'Updated yesterday';
-  if (days < 7)  return `Updated ${days}d ago`;
-  return `Updated ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+  return parts.length > 0 ? parts.join(' · ') : 'Empty CV';
 }
 
 // ── Toggle ─────────────────────────────────────────────────────────────────────
@@ -140,7 +140,7 @@ function CVRow({
           </div>
         )}
         <p className="text-[11px] text-gray-400 truncate mt-0.5">
-          {templateInfo.name} · {relativeDate(cv.updatedAt)}
+          {templateInfo.name} · {getContentSummary(cv)}
         </p>
       </div>
 
@@ -286,9 +286,8 @@ function CVDetailPanel({
               </span>
             )}
           </div>
-          <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {relativeDate(cv.updatedAt)}
+          <p className="text-[11px] text-gray-500 mt-1">
+            {getContentSummary(cv)}
           </p>
         </div>
 
