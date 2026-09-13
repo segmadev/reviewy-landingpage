@@ -21,8 +21,16 @@ import type { SavedCV } from '../../types/resume';
 import { TEMPLATES } from '../../components/templates';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function relativeDate(iso: string) {
-  const d    = new Date(iso);
+function relativeDate(iso: string | undefined) {
+  if (!iso) return 'Date unknown';
+
+  const d = new Date(iso);
+
+  // Handle invalid date
+  if (isNaN(d.getTime())) {
+    return 'Date unknown';
+  }
+
   const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
   if (days === 0) return 'Updated today';
   if (days === 1) return 'Updated yesterday';
@@ -418,6 +426,17 @@ export default function DashboardPage() {
   useEffect(() => { localStorage.setItem('rym_pref_autosave', String(autoSave)); }, [autoSave]);
   useEffect(() => { localStorage.setItem('rym_pref_hints',    String(showHints)); }, [showHints]);
 
+  // Check if a CV is empty (should be auto-deleted)
+  const isEmptyCV = (cv: SavedCV) => {
+    const hasBasicInfo = cv.contactDetails?.fullName && cv.contactDetails.fullName.trim().length > 0;
+    const hasExperience = cv.workExperience && cv.workExperience.length > 0;
+    const hasEducation = cv.education && cv.education.length > 0;
+    const hasSkills = cv.skills && cv.skills.length > 0;
+    const hasSummary = cv.professionalSummary && cv.professionalSummary.trim().length > 0;
+
+    return !hasBasicInfo && !hasExperience && !hasEducation && !hasSkills && !hasSummary;
+  };
+
   useEffect(() => {
     setIsLoading(true);
 
@@ -425,8 +444,18 @@ export default function DashboardPage() {
       // Load CVs from backend
       getUserResumes()
         .then((backendCVs) => {
-          setCVs(backendCVs);
-          if (backendCVs.length > 0) setSelectedId(backendCVs[0].id);
+          // Filter out empty CVs and delete them
+          const nonEmptyCVs = backendCVs.filter(cv => !isEmptyCV(cv));
+
+          // Auto-delete empty CVs
+          const emptyCVs = backendCVs.filter(cv => isEmptyCV(cv));
+          emptyCVs.forEach(cv => {
+            deleteResume(cv.id)
+              .catch(err => console.error(`Failed to delete empty CV ${cv.id}:`, err));
+          });
+
+          setCVs(nonEmptyCVs);
+          if (nonEmptyCVs.length > 0) setSelectedId(nonEmptyCVs[0].id);
           setIsLoading(false);
         })
         .catch((error) => {
