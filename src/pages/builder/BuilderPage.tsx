@@ -91,7 +91,7 @@ function BottomSheet({
 function BuilderInner() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
-  const { state, dispatch, prevStep, nextStep, goToStep } = useBuilder();
+  const { state, dispatch, prevStep, goToStep } = useBuilder();
   const { isAuthenticated, user } = useAuth();
   useAutoSave();
   const { success, error: showError } = useToast();
@@ -322,14 +322,6 @@ function BuilderInner() {
     void handleFinish(additionalInfo);
   };
 
-  const handleNext = () => {
-    if (currentStep >= 7) {
-      requestFinish();
-    } else {
-      nextStep();
-    }
-  };
-
   const handleLoginSuccess = () => {
     // Modal is already closed by FinishLoginModal component
     // Wait for auth state to fully update before proceeding with finish
@@ -458,31 +450,6 @@ function BuilderInner() {
                 {stepComponents[currentStep]}
               </AnimatePresence>
             </div>
-
-            {/* Mobile bottom navigation for steps without in-form actions */}
-            {currentStep < 7 && (
-              <div className="lg:hidden shrink-0 flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-                {currentStep > 1 && (
-                  <button
-                    onClick={prevStep}
-                    className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Previous
-                  </button>
-                )}
-                <div className="flex-1" />
-                <button
-                  onClick={handleNext}
-                  className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white font-semibold text-sm px-5 py-2 rounded-full transition-colors shadow-lg shadow-primary/30"
-                >
-                  Next
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8h10M9 4l4 4-4 4" />
-                  </svg>
-                </button>
-              </div>
-            )}
           </div>
 
           {/* ── Mobile preview (toggleable on mobile) ────────── */}
