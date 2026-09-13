@@ -165,9 +165,10 @@ export async function httpClient(
         finalHeaders.Authorization = `Bearer ${newToken}`;
         response = await fetch(url, { ...fetchOptions, headers: finalHeaders });
       } else {
-        // Refresh failed - clear auth and redirect to login
+        // Refresh failed - clear auth and throw error (don't redirect)
+        // Let the component handle showing login modal
         clearTokens();
-        window.location.href = '/auth/login';
+        console.warn('[HTTP] Token refresh failed, throwing UnauthorizedError');
         throw new HttpError(401, null, 'Session expired. Please login again.');
       }
     }

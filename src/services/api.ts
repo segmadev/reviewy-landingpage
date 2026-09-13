@@ -20,6 +20,14 @@ export class ResumeNotFoundError extends Error {
   }
 }
 
+// Custom error for when user is not authorized (401)
+export class UnauthorizedError extends Error {
+  constructor() {
+    super('Please log in to save your CV');
+    this.name = 'UnauthorizedError';
+  }
+}
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export interface SignupData {

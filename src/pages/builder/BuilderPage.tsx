@@ -21,6 +21,7 @@ import Step5Skills from '../../components/builder/steps/Step5Skills';
 import Step6Summary from '../../components/builder/steps/Step6Summary';
 import Step7Additional, { type AdditionalInfoSubmission } from '../../components/builder/steps/Step7Additional';
 import { submitCV, getResumeById, getUserCreditBalance, convertResumeToNew, ResumeNotFoundError } from '../../services/api';
+import { HttpError } from '../../services/http-client';
 import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
 import { useAutoSave, BUILDER_CACHE_KEY } from '../../hooks/useAutoSave';
 import { useToast } from '../../context/ToastContext';
@@ -263,11 +264,17 @@ function BuilderInner() {
       }
 
       // Check if error is 401 Unauthorized - session expired or not authenticated
-      if (message.includes('401') || message.includes('Unauthorized')) {
-        showError('Please log in to save your CV.');
+      if (error instanceof HttpError && error.status === 401) {
+        console.log('[Builder] Unauthorized (401), showing login modal');
         dispatch({ type: 'SET_SUBMITTING', payload: false });
-        // Reset to step 7 so user can try again after login
-        dispatch({ type: 'SET_STEP', payload: 7 });
+        setShowLoginModal(true);
+        return;
+      }
+
+      // Fallback check for 401 in message (for safety)
+      if (message.includes('401') || message.includes('Unauthorized')) {
+        console.log('[Builder] Detected 401 from message, showing login modal');
+        dispatch({ type: 'SET_SUBMITTING', payload: false });
         setShowLoginModal(true);
         return;
       }
