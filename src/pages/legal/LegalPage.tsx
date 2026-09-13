@@ -32,7 +32,6 @@ const DOCUMENT_ICONS: Record<LegalLink['href'], LucideIcon> = {
 
 export default function LegalPage({ document: slug }: LegalPageProps) {
   const content = LEGAL_DOCUMENTS[slug];
-  const ActiveDocumentIcon = DOCUMENT_ICONS[`/${slug}`];
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
