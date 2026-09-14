@@ -93,7 +93,7 @@ export async function saveBuilderStep(resumeId: string, data: Partial<ResumeData
       // Create new resume
       console.log('[API] No resumeId in saveBuilderStep, creating new resume');
       const response = (await http.post(ENDPOINTS.CREATE_RESUME, {
-        contactDetails: data.contactDetails,
+        ...data,
       })) as { id: string };
       console.log(`[API] saveBuilderStep created new resume with ID: ${response.id}`);
       return response.id;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '../../ui/Button';
-import { useBuilder } from '../../../context/BuilderContext';
+import { useBuilder, useBuilderField } from '../../../context/BuilderContext';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { useToast } from '../../../context/ToastContext';
 import type { Education } from '../../../types/resume';
@@ -14,13 +14,11 @@ function newEntry(): Education {
 }
 
 export default function Step4Education() {
-  const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { nextStep, prevStep } = useBuilder();
   const { suggestions } = useCVSuggestions();
   const { error: showError } = useToast();
-  const [entries, setEntries] = useState<Education[]>(
-    state.education.length > 0 ? state.education : [newEntry()]
-  );
-  const [selectedLevels, setSelectedLevels] = useState<Record<string, string>>({});
+  const [emptyEntries] = useState(() => [newEntry()]);
+  const [entries, setEntries] = useBuilderField('education', emptyEntries);
 
   const update = (id: string, patch: Partial<Education>) =>
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -32,7 +30,6 @@ export default function Step4Education() {
       return;
     }
 
-    dispatch({ type: 'SET_EDUCATION', payload: entries });
     nextStep();
   };
 
@@ -71,9 +68,9 @@ export default function Step4Education() {
                 {levels.map((level) => (
                   <button
                     key={level}
-                    onClick={() => setSelectedLevels({ ...selectedLevels, [entry.id]: level })}
+                    onClick={() => update(entry.id, { level })}
                     className={`px-3 py-1 rounded-lg text-xs font-medium border transition-colors ${
-                      selectedLevels[entry.id] === level
+                      entry.level === level
                         ? 'bg-primary text-white border-primary'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-primary'
                     }`}

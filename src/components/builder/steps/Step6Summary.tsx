@@ -1,24 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, X, AlertCircle } from 'lucide-react';
 import { Button } from '../../ui/Button';
-import { useBuilder } from '../../../context/BuilderContext';
+import { useBuilder, useBuilderField } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { generateSummary } from '../../../services/api';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 
 export default function Step6Summary() {
-  const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { state, nextStep, prevStep } = useBuilder();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
-  const [summary, setSummary] = useState(state.professionalSummary);
+  const [summary, setSummary] = useBuilderField('professionalSummary');
   const [generating, setGenerating] = useState(false);
   const [reasoning, setReasoning] = useState('');
   const [conversationId, setConversationId] = useState<string | undefined>();
   const abortControllerRef = useRef<AbortController | null>(null);
-  const autoGeneratingRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
 
   // Detect all placeholder patterns: [X], [Company Name], [Number], etc.
   const placeholderPattern = /\[([^\]]+)\]/g;
@@ -110,16 +110,7 @@ export default function Step6Summary() {
     setGenerating(false);
   };
 
-  // Auto-generate summary if empty on mount
-  useEffect(() => {
-    if (summary.trim() === '' && !autoGeneratingRef.current && state.jobDescription) {
-      autoGeneratingRef.current = true;
-      handleGenerate();
-    }
-  }, []);
-
   const handleNext = () => {
-    dispatch({ type: 'SET_SUMMARY', payload: summary });
     nextStep();
   };
 

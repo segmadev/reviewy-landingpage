@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X } from 'lucide-react';
 import { Button } from '../../ui/Button';
-import { useBuilder } from '../../../context/BuilderContext';
+import { useBuilder, useBuilderField, useBuilderInput } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
@@ -31,17 +30,18 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
   const { state, dispatch, prevStep } = useBuilder();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
-  const [languages, setLanguages] = useState<string[]>(state.languages ?? []);
-  const [certs, setCerts] = useState<Certification[]>(state.certifications ?? []);
-  const [awards, setAwards] = useState<string[]>(state.awards ?? []);
-  const [hobbies, setHobbies] = useState<string[]>(state.hobbies ?? []);
-  const [refs, setRefs] = useState<Reference[]>(state.references ?? []);
+  const [languages, setLanguages] = useBuilderField('languages');
+  const [certs, setCerts] = useBuilderField('certifications');
+  const [awards, setAwards] = useBuilderField('awards');
+  const [hobbies, setHobbies] = useBuilderField('hobbies');
+  const [refs, setRefs] = useBuilderField('references');
 
-  const [langInput, setLangInput] = useState('');
-  const [awardInput, setAwardInput] = useState('');
-  const [hobbyInput, setHobbyInput] = useState('');
+  const [langInput, setLangInput] = useBuilderInput('language');
+  const [awardInput, setAwardInput] = useBuilderInput('award');
+  const [hobbyInput, setHobbyInput] = useBuilderInput('hobby');
 
   const toggles = state.toggles;
+
 
   const handleNext = () => {
     // Only validate enabled sections
@@ -69,11 +69,7 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
       references: toggles.references ? refs : [],
     };
 
-    dispatch({ type: 'SET_LANGUAGES', payload: additionalInfo.languages });
-    dispatch({ type: 'SET_CERTIFICATIONS', payload: additionalInfo.certifications });
-    dispatch({ type: 'SET_AWARDS', payload: additionalInfo.awards });
-    dispatch({ type: 'SET_HOBBIES', payload: additionalInfo.hobbies });
-    dispatch({ type: 'SET_REFERENCES', payload: additionalInfo.references });
+    // Disabling a section excludes it from the output, not from the saved draft.
     onFinish(additionalInfo);
   };
 

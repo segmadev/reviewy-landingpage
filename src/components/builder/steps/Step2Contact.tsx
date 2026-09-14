@@ -1,36 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../../ui/Button';
-import { useBuilder } from '../../../context/BuilderContext';
+import { useBuilder, useBuilderField } from '../../../context/BuilderContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { getUserProfile } from '../../../services/api';
 import type { ContactDetails } from '../../../types/resume';
 
 export default function Step2Contact() {
-  const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { nextStep, prevStep } = useBuilder();
   const { user } = useAuth();
   const { error: showError } = useToast();
-  const [contact, setContact] = useState<ContactDetails>({ ...state.contactDetails });
-  const [linkedin, setLinkedin] = useState(state.linkedinProfile);
-  const [portfolio, setPortfolio] = useState<string[]>([...state.portfolioLinks]);
+  const [contact, setContact] = useBuilderField('contactDetails');
+  const [linkedin, setLinkedin] = useBuilderField('linkedinProfile');
+  const [portfolio, setPortfolio] = useBuilderField('portfolioLinks');
 
   // Auto-fill contact details from user profile
   useEffect(() => {
     if (!user?.id || contact.fullName) return;
+    let cancelled = false;
 
     getUserProfile()
       .then((profile) => {
+        if (cancelled) return;
         setContact((prev) => ({
           ...prev,
-          fullName: profile.fullName || prev.fullName,
-          email: profile.email || prev.email,
+          fullName: prev.fullName || profile.fullName || '',
+          email: prev.email || profile.email || '',
         }));
       })
       .catch((error) => {
         console.error('Failed to fetch profile:', error);
       });
-  }, [user?.id]);
+    return () => { cancelled = true; };
+  }, [contact.fullName, user?.id, setContact]);
 
   const handleNext = () => {
     if (!contact.fullName.trim() || !contact.email.trim() || !contact.phone.trim() || !contact.address.trim() || !contact.city.trim() || !contact.postcode.trim()) {
@@ -38,9 +41,6 @@ export default function Step2Contact() {
       return;
     }
 
-    dispatch({ type: 'SET_CONTACT', payload: contact });
-    dispatch({ type: 'SET_LINKEDIN', payload: linkedin });
-    dispatch({ type: 'SET_PORTFOLIO', payload: portfolio });
     nextStep();
   };
 
@@ -120,7 +120,8 @@ export default function Step2Contact() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
             <select
               className="w-full px-3 py-2.5 rounded-lg bg-gray-50 border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-colors text-sm"
-              defaultValue="GB"
+              value={contact.country || 'GB'}
+              onChange={(event) => setContact({ ...contact, country: event.target.value })}
             >
               <option value="GB">United Kingdom</option>
               <option value="IE">Ireland</option>

@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Plus } from 'lucide-react';
 import { Button } from '../../ui/Button';
-import { useBuilder } from '../../../context/BuilderContext';
+import { useBuilder, useBuilderField, useBuilderInput } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { getAISkillSuggestions } from '../../../services/api';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
-import appConfig from '../../../config/app';
 
 export default function Step5Skills() {
-  const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { state, nextStep, prevStep } = useBuilder();
   const { error: showError } = useToast();
   const { suggestions: cvSuggestions } = useCVSuggestions();
   const paymentGate = usePaymentGate();
-  const [skills, setSkills] = useState<string[]>(state.skills.length ? state.skills : []);
+  const [skills, setSkills] = useBuilderField('skills');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [reasoning, setReasoning] = useState('');
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const [custom, setCustom] = useState('');
+  const [custom, setCustom] = useBuilderInput('skill');
+
 
   // Function to load AI suggestions
   const loadAISuggestions = async () => {
@@ -29,7 +29,7 @@ export default function Step5Skills() {
       return;
     }
 
-    let cancelled = false;
+    const cancelled = false;
     setLoadingSuggestions(true);
 
     try {
@@ -52,13 +52,6 @@ export default function Step5Skills() {
     }
   };
 
-  // Auto-load suggestions if AI_AUTO_CALL is enabled
-  useEffect(() => {
-    if (!appConfig.AI_AUTO_CALL || !state.jobDescription) return;
-
-    loadAISuggestions();
-  }, [state.jobDescription]);
-
   const addSkill = (skill: string) => {
     if (!skills.includes(skill)) {
       setSkills((prev) => [...prev, skill]);
@@ -80,7 +73,6 @@ export default function Step5Skills() {
   };
 
   const handleNext = () => {
-    dispatch({ type: 'SET_SKILLS', payload: skills });
     nextStep();
   };
 
@@ -153,7 +145,7 @@ export default function Step5Skills() {
               />
             )}
           </div>
-          {!appConfig.AI_AUTO_CALL && suggestions.length === 0 && !loadingSuggestions && (
+          {suggestions.length === 0 && !loadingSuggestions && (
             <button
               onClick={loadAISuggestions}
               className="text-xs font-medium text-primary hover:underline flex items-center gap-1"

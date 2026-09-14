@@ -5,6 +5,7 @@ export interface ContactDetails {
   postcode: string;
   phone: string;
   email: string;
+  country?: string;
 }
 
 export interface WorkExperience {
@@ -22,6 +23,7 @@ export interface Education {
   degree: string;
   startDate: string;
   endDate: string;
+  level?: string;
 }
 
 export interface Certification {
@@ -141,6 +143,7 @@ export interface SavedCV {
   createdAt: string;   // ISO
   updatedAt: string;   // ISO
   isDraft?: boolean;   // marks CV as a draft from localStorage
+  currentStep?: number; // local progress checkpoint when the CV is unfinished
 }
 
 export interface Product {

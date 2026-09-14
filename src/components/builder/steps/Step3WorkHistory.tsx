@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Sparkles, Check, X, AlertCircle } from 'lucide-react';
 import { Button } from '../../ui/Button';
-import { useBuilder } from '../../../context/BuilderContext';
+import { useBuilder, useBuilderField } from '../../../context/BuilderContext';
 import { useToast } from '../../../context/ToastContext';
 import { getAIBulletPoints } from '../../../services/api';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
@@ -15,16 +15,16 @@ function newEntry(): WorkExperience {
 }
 
 export default function Step3WorkHistory() {
-  const { state, dispatch, nextStep, prevStep } = useBuilder();
+  const { state, nextStep, prevStep } = useBuilder();
   const { suggestions } = useCVSuggestions();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
-  const [entries, setEntries] = useState<WorkExperience[]>(
-    state.workExperience.length > 0 ? state.workExperience : [newEntry()]
-  );
+  const [emptyEntries] = useState(() => [newEntry()]);
+  const [entries, setEntries] = useBuilderField('workExperience', emptyEntries);
   const [aiTarget, setAiTarget] = useState<string | null>(null);
   const [aiBullets, setAiBullets] = useState<string[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
+
 
   const update = (id: string, patch: Partial<WorkExperience>) =>
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -98,9 +98,7 @@ export default function Step3WorkHistory() {
       return;
     }
 
-    // Filter out empty entries (no job title) before storing
-    const cleanedEntries = entries.filter((exp) => exp.position && exp.position.trim().length > 0);
-    dispatch({ type: 'SET_WORK_EXPERIENCE', payload: cleanedEntries });
+    // Drafts retain partially entered positions, even when they are not ready for export.
     nextStep();
   };
 

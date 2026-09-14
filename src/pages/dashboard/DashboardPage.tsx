@@ -18,6 +18,8 @@ import {
 import { getUserResumes, deleteResume } from '../../services/api';
 import { clearBuilderDraftTracking } from '../../hooks/useAutoSave';
 import type { SavedCV } from '../../types/resume';
+import { clearBuilderDraft, loadBuilderDraft, mergeBuilderDrafts } from '../../services/builderDraftStorage';
+import { waitForBuilderSave } from '../../hooks/useAutoSave';
 import { TEMPLATES } from '../../components/templates';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -425,42 +427,26 @@ export default function DashboardPage() {
   useEffect(() => { localStorage.setItem('rym_pref_autosave', String(autoSave)); }, [autoSave]);
   useEffect(() => { localStorage.setItem('rym_pref_hints',    String(showHints)); }, [showHints]);
 
-  // Check if a CV is empty (should be auto-deleted)
-  const isEmptyCV = (cv: SavedCV) => {
-    const hasBasicInfo = cv.contactDetails?.fullName && cv.contactDetails.fullName.trim().length > 0;
-    const hasExperience = cv.workExperience && cv.workExperience.length > 0;
-    const hasEducation = cv.education && cv.education.length > 0;
-    const hasSkills = cv.skills && cv.skills.length > 0;
-    const hasSummary = cv.professionalSummary && cv.professionalSummary.trim().length > 0;
-
-    return !hasBasicInfo && !hasExperience && !hasEducation && !hasSkills && !hasSummary;
-  };
-
   useEffect(() => {
     setIsLoading(true);
+    let cancelled = false;
 
     if (isAuthenticated) {
       // Load CVs from backend
       getUserResumes()
         .then((backendCVs) => {
-          // Filter out empty CVs and delete them
-          const nonEmptyCVs = backendCVs.filter(cv => !isEmptyCV(cv));
-
-          // Auto-delete empty CVs
-          const emptyCVs = backendCVs.filter(cv => isEmptyCV(cv));
-          emptyCVs.forEach(cv => {
-            deleteResume(cv.id)
-              .catch(err => console.error(`Failed to delete empty CV ${cv.id}:`, err));
-          });
-
-          setCVs(nonEmptyCVs);
-          if (nonEmptyCVs.length > 0) setSelectedId(nonEmptyCVs[0].id);
+          if (cancelled) return;
+          // An incomplete resume is still a valuable draft. Delete only on explicit request.
+          const resumes = user?.id ? mergeBuilderDrafts(user.id, backendCVs) : backendCVs;
+          setCVs(resumes);
+          if (resumes.length > 0) setSelectedId(resumes[0].id);
           setIsLoading(false);
         })
         .catch((error) => {
+          if (cancelled) return;
           console.error('Failed to load CVs:', error);
           // Fallback to local library if backend fails
-          const lib = loadLibrary();
+          const lib = user?.id ? mergeBuilderDrafts(user.id, [], true) : loadLibrary();
           setCVs(lib);
           if (lib.length > 0) setSelectedId(lib[0].id);
           showError('Failed to load CVs from server');
@@ -476,7 +462,8 @@ export default function DashboardPage() {
       if (drafts.length > 0) setSelectedId(drafts[0].id);
       setIsLoading(false);
     }
-  }, [isAuthenticated, showError]);
+    return () => { cancelled = true; };
+  }, [isAuthenticated, user?.id, showError]);
 
   const firstName  = user?.fullName?.split(' ')[0] ?? 'there';
   const selectedCV = cvs.find(c => c.id === selectedId) ?? null;
@@ -520,7 +507,13 @@ export default function DashboardPage() {
     if (!deleteTarget) return;
     try {
       // Delete from backend
-      await deleteResume(deleteTarget.id);
+      const checkpoint = user?.id ? loadBuilderDraft(user.id, deleteTarget.id) : null;
+      const pendingId = checkpoint && user?.id ? await waitForBuilderSave(user.id, checkpoint.draftId) : undefined;
+      if (!checkpoint || checkpoint.submittedCvId || pendingId) {
+        await deleteResume(checkpoint?.submittedCvId || pendingId || deleteTarget.id);
+      }
+      clearBuilderDraft(user?.id ?? null, deleteTarget.id);
+      dispatch({ type: 'NEW_CV' });
       success('CV deleted successfully');
 
       // Reload page after short delay to ensure backend sync

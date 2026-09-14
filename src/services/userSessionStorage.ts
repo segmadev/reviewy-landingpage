@@ -6,8 +6,9 @@ const USER_SESSION_STORAGE_KEYS = [
 ] as const;
 
 /**
- * Removes data that belongs to the signed-in account while preserving
- * visitor-level choices such as cookie consent and anonymous draft storage.
+ * Removes authentication/session data that belongs to the signed-in account.
+ * Completed and in-progress CV documents use separate owner-scoped persistence,
+ * so they remain recoverable only after the same account signs in again.
  */
 export function clearSignedInUserStorage(): void {
   try {

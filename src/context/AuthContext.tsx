@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import type { User } from '../types/resume';
 import { STORAGE_KEYS } from '../config/api.config';
 import { tokenManager, http } from '../services/http-client';
@@ -22,6 +22,7 @@ interface AuthContextValue extends AuthState {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const sessionGeneration = useRef(0);
   const [state, setState] = useState<AuthState>(() => {
     // Restore session from localStorage if present
     const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -63,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((accessToken: string, refreshToken: string, user?: User) => {
     // Store tokens even if user is missing - we'll fetch it separately
     if (accessToken && refreshToken) {
+      sessionGeneration.current += 1;
       console.log('[AuthContext] Storing tokens:');
       console.log('  - accessToken:', accessToken.substring(0, 50) + '...');
       console.log('  - refreshToken:', refreshToken.substring(0, 50) + '...');
@@ -97,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchProfile = useCallback(async (token?: string) => {
+    const generation = sessionGeneration.current;
     // Use provided token or fall back to state token
     const tokenToUse = token || state.accessToken;
     console.log('[AuthContext] fetchProfile called, token:', tokenToUse ? '✓' : '✗');
@@ -110,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
       const profile = await getUserProfile();
+      if (generation !== sessionGeneration.current) return;
       console.log('[AuthContext] ✓ Profile received:', profile?.email);
 
       if (profile) {
@@ -124,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[AuthContext] ✓ Stored in localStorage');
       }
     } catch (error) {
+      if (generation !== sessionGeneration.current) return;
       console.error('[AuthContext] ✗ Profile fetch failed:', error instanceof Error ? error.message : error);
       setState((prev) => ({ ...prev, isLoading: false }));
     }
@@ -132,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const currentUserId = state.user?.id;
 
   const logout = useCallback(async () => {
+    sessionGeneration.current += 1;
     // Start the request while the current access token is still available, then
     // clear the browser session synchronously instead of waiting on the network.
     const logoutRequest = currentUserId

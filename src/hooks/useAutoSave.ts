@@ -4,126 +4,102 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { saveBuilderStep } from '../services/api';
 import { STORAGE_KEYS } from '../config/api.config';
-import { saveAnonymousDraft } from '../services/anonymousSession';
+import { deleteAnonymousDraft } from '../services/anonymousSession';
+import { getStoredBuilderUserId, hasBuilderProgress, LEGACY_BUILDER_CACHE_KEY, loadBuilderDraft, saveBuilderDraft } from '../services/builderDraftStorage';
 
-const AUTOSAVE_DELAY = 1000; // 1 second debounce
-export const BUILDER_CACHE_KEY = 'rym_builder_cache';
+export const BUILDER_CACHE_KEY = LEGACY_BUILDER_CACHE_KEY;
+const inFlightSaves = new Map<string, Promise<string>>();
 
-// Clears this hook's in-progress resume-id tracking. Must be called whenever the
-// user explicitly starts a brand-new CV (dispatching NEW_CV) — otherwise the
-// resume id left over from whatever was being edited/autosaved before stays in
-// localStorage and the next autosave tick silently reuses it, patching the wrong
-// resume on the backend instead of creating a new one.
+export async function waitForBuilderSave(owner: string, draftId: string): Promise<string | undefined> {
+  return inFlightSaves.get(`${owner}:${draftId}`);
+}
+
+// Starting another CV must not delete any existing draft or reuse its server ID.
 export function clearBuilderDraftTracking(): void {
   localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
-  localStorage.removeItem(BUILDER_CACHE_KEY);
+  localStorage.removeItem(LEGACY_BUILDER_CACHE_KEY);
 }
 
 export function useAutoSave() {
   const { state, dispatch } = useBuilder();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { error: showError } = useToast();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSavedRef = useRef<string>('');
+  const [revision, setRevision] = useState(0);
+  const previousOwner = useRef(getStoredBuilderUserId());
+  const skipSnapshot = useRef(false);
+  const running = useRef(false);
+  const saved = useRef(new Map<string, string>());
+  const serverIds = useRef(new Map<string, string>());
+  const latest = useRef({ state, owner: user?.id });
 
   useEffect(() => {
-    // For authenticated users: Don't autosave until Step 1 (Job Targeting) is complete (only for new CVs)
-    if (isAuthenticated) {
-      const isNewCV = !state.submittedCvId;
-      if (isNewCV && (!state.jobDescription || state.jobDescription.trim() === '')) return;
+    latest.current = { state, owner: user?.id };
+    const owner = user?.id ?? null;
+    // Login can be authenticated before the profile request supplies a user ID.
+    if (isAuthenticated && !owner) return;
+    const previous = previousOwner.current;
+    if (previous === owner) return;
+    previousOwner.current = owner;
+    skipSnapshot.current = true;
+    if (!owner) {
+      dispatch({ type: 'NEW_CV' });
+    } else if (!previous && hasBuilderProgress(state)) {
+      saveBuilderDraft(owner, state);
+      deleteAnonymousDraft();
+      skipSnapshot.current = false;
+    } else {
+      const checkpoint = loadBuilderDraft(owner);
+      dispatch(checkpoint ? { type: 'RESTORE_DRAFT', payload: checkpoint } : { type: 'NEW_CV' });
     }
+  }, [state, user?.id, isAuthenticated, dispatch]);
 
-    // Create a hash of the current state to detect changes
-    const stateHash = JSON.stringify({
-      contactDetails: state.contactDetails,
-      linkedinProfile: state.linkedinProfile,
-      portfolioLinks: state.portfolioLinks,
-      professionalSummary: state.professionalSummary,
-      skills: state.skills,
-      workExperience: state.workExperience,
-      education: state.education,
-      relevantCourseWork: state.relevantCourseWork,
-      certifications: state.certifications,
-      references: state.references,
-      languages: state.languages,
-      awards: state.awards,
-      hobbies: state.hobbies,
-      jobDescription: state.jobDescription,
-      toggles: state.toggles,
-    });
-
-    // Only autosave if state changed
-    if (stateHash === lastSavedRef.current) return;
-
-    // Clear existing timeout
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
-    setSaveStatus('saving');
-
-    // Set new timeout for debounced save
-    timeoutRef.current = setTimeout(async () => {
+  useEffect(() => {
+    if (skipSnapshot.current) {
+      skipSnapshot.current = false;
+      return;
+    }
+    if (!isAuthenticated || !user?.id || state.isSubmitting || !hasBuilderProgress(state)) return;
+    const owner = user.id;
+    const key = `${owner}:${state.draftId}`;
+    const fingerprint = JSON.stringify(state);
+    if (saved.current.get(key) === fingerprint) return;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const timer = setTimeout(async () => {
+      // One write at a time: a slow create must never produce a second resume.
+      if (running.current || getStoredBuilderUserId() !== owner) return;
+      running.current = true;
+      setSaveStatus('saving');
       try {
-        // Always save to localStorage cache for quick restoration (Steps 3-7 only)
-        const cacheData = {
-          workExperience: state.workExperience,
-          education: state.education,
-          relevantCourseWork: state.relevantCourseWork,
-          certifications: state.certifications,
-          references: state.references,
-          skills: state.skills,
-          professionalSummary: state.professionalSummary,
-          languages: state.languages,
-          awards: state.awards,
-          hobbies: state.hobbies,
-          toggles: state.toggles,
-          linkedinProfile: state.linkedinProfile,
-          portfolioLinks: state.portfolioLinks,
-          jobDescription: state.jobDescription,
-          templateId: state.templateId,
-          templateCustomizations: state.templateCustomizations,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(BUILDER_CACHE_KEY, JSON.stringify(cacheData));
-
-        if (isAuthenticated) {
-          // Save to backend for authenticated users.
-          // state.submittedCvId is the authoritative id for "which resume is loaded"
-          // (set by LOAD_CV when opening an existing resume, or by this hook itself
-          // once autosave creates one) — it must take priority over the localStorage
-          // slot below, which only exists to survive a debounce/unmount between the
-          // first autosave tick and state catching up, and can otherwise go stale
-          // and leak into a different resume's autosave after switching CVs.
-          const resumeId = state.submittedCvId || localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
-          const newResumeId = await saveBuilderStep(resumeId, state);
-
-          // Store resume ID for next saves, and keep state in sync so subsequent
-          // ticks (and any other code reading state.submittedCvId) see it too.
-          localStorage.setItem(STORAGE_KEYS.RESUMED_ID, newResumeId);
-          if (newResumeId && newResumeId !== state.submittedCvId) {
-            dispatch({ type: 'SET_SUBMITTED', payload: newResumeId });
-          }
-        } else {
-          // Save to localStorage for anonymous users
-          saveAnonymousDraft(state);
+        const request = saveBuilderStep(state.submittedCvId || serverIds.current.get(key) || '', state);
+        inFlightSaves.set(key, request);
+        const id = await request;
+        serverIds.current.set(key, id);
+        saved.current.set(key, fingerprint);
+        const checkpoint = loadBuilderDraft(owner, state.draftId);
+        if (checkpoint) saveBuilderDraft(owner, { ...checkpoint, submittedCvId: id }, false);
+        const active = latest.current;
+        if (getStoredBuilderUserId() === owner && active.owner === owner && active.state.draftId === state.draftId && !active.state.submittedCvId && !active.state.isSubmitting) {
+          dispatch({ type: 'SET_SUBMITTED', payload: id });
         }
-
-        lastSavedRef.current = stateHash;
         setSaveStatus('saved');
-
-        // Reset status after 2 seconds
-        setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (error) {
         console.error('Auto-save failed:', error);
         setSaveStatus('error');
-        showError('Failed to save CV. Will retry automatically.');
+        showError('Your draft is saved on this device. Server sync failed; reconnect and try again.');
+        retry = setTimeout(() => setRevision(value => value + 1), 10000);
+      } finally {
+        inFlightSaves.delete(key);
+        running.current = false;
+        // Reconsider the latest snapshot, including edits made during the request.
+        if (!retry) setRevision(value => value + 1);
       }
-    }, AUTOSAVE_DELAY);
-
+    }, 1000);
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      clearTimeout(timer);
+      if (retry) clearTimeout(retry);
     };
-  }, [state, isAuthenticated, showError]);
+  }, [state, user?.id, isAuthenticated, dispatch, showError, revision]);
 
   return { saveStatus };
 }

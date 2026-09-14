@@ -23,14 +23,14 @@ import Step7Additional, { type AdditionalInfoSubmission } from '../../components
 import { submitCV, getResumeById, getUserCreditBalance, convertResumeToNew, ResumeNotFoundError } from '../../services/api';
 import { HttpError } from '../../services/http-client';
 import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
-import { useAutoSave, BUILDER_CACHE_KEY } from '../../hooks/useAutoSave';
+import { BUILDER_CACHE_KEY, waitForBuilderSave } from '../../hooks/useAutoSave';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { STORAGE_KEYS } from '../../config/api.config';
-import { getAnonymousDraft, isAnonymousSession } from '../../services/anonymousSession';
 import AnonymousSessionWarning from '../../components/AnonymousSessionWarning';
 import ResumeNotFoundModal from '../../components/builder/ResumeNotFoundModal';
 import type { ResumeData, SavedCV } from '../../types/resume';
+import { loadBuilderDraft } from '../../services/builderDraftStorage';
 
 const DARK_PANEL = '#1c1c1e';
 
@@ -93,7 +93,6 @@ function BuilderInner() {
   const { id } = useParams<{ id?: string }>();
   const { state, dispatch, prevStep, goToStep } = useBuilder();
   const { isAuthenticated, user } = useAuth();
-  useAutoSave();
   const { success, error: showError } = useToast();
   const [showPreview,    setShowPreview]    = useState(false);
   const [showCustomizer, setShowCustomizer] = useState(false);
@@ -107,41 +106,49 @@ function BuilderInner() {
   const [resumeNotFoundId, setResumeNotFoundId] = useState<string>('');
   const [isConvertingResume, setIsConvertingResume] = useState(false);
 
-  // Load CV from backend using URL parameter if provided, or load anonymous draft
+  // Route-backed edits prefer the matching local checkpoint, then fall back to the backend.
+  // This effect intentionally does not depend on submittedCvId: autosave assigning the first
+  // backend id must never reload the form or move the user back to another step.
   useEffect(() => {
-    if (id && id !== state.submittedCvId) {
-      const loadCV = async () => {
-        setIsLoadingCV(true);
-        try {
-          const cv = await getResumeById(id);
-          dispatch({ type: 'LOAD_CV', payload: cv });
+    if (!id) return;
 
-          // When editing existing CV, auto-fill job description from jobUrl or jobDescription
-          if (cv.jobUrl || cv.jobDescription) {
-            const jobDescToUse = cv.jobDescription || cv.jobUrl || '';
-            if (jobDescToUse && jobDescToUse.trim().length > 0) {
-              dispatch({ type: 'SET_JOB_DESCRIPTION', payload: jobDescToUse });
-            }
-          }
+    const localDraft = user?.id ? loadBuilderDraft(user.id, id) : null;
+    if (localDraft) {
+      dispatch({ type: 'RESTORE_DRAFT', payload: localDraft });
+      return;
+    }
 
-          // When editing, start from Job Targeting (Step 1)
-          goToStep(1);
-        } catch (error) {
+    // Anonymous dashboard edits already load their local CV before navigating.
+    if (!isAuthenticated && state.submittedCvId === id) return;
+
+    let cancelled = false;
+    const loadCV = async () => {
+      setIsLoadingCV(true);
+      try {
+        const cv = await getResumeById(id);
+        if (cancelled) return;
+
+        dispatch({ type: 'LOAD_CV', payload: cv });
+
+        const jobDescription = cv.jobDescription || cv.jobUrl || '';
+        if (jobDescription.trim()) {
+          dispatch({ type: 'SET_JOB_DESCRIPTION', payload: jobDescription });
+        }
+      } catch (error) {
+        if (!cancelled) {
           console.error('Failed to load CV:', error);
           showError('Failed to load CV. Please try again.');
-        } finally {
-          setIsLoadingCV(false);
         }
-      };
-      loadCV();
-    } else if (!id && isAnonymousSession()) {
-      // Load anonymous draft if no CV ID provided
-      const draft = getAnonymousDraft();
-      if (draft) {
-        dispatch({ type: 'LOAD_CV', payload: draft });
+      } finally {
+        if (!cancelled) setIsLoadingCV(false);
       }
-    }
-  }, [id, state.submittedCvId, dispatch, showError, goToStep]);
+    };
+
+    void loadCV();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, user?.id, isAuthenticated, state.submittedCvId, dispatch, showError]);
 
   // Check user's credit balance to determine if watermark should be shown
   useEffect(() => {
@@ -181,7 +188,8 @@ function BuilderInner() {
       // one) — it must take priority over the auto-save localStorage slot, which can
       // go stale after switching between CVs and would otherwise target the wrong
       // resume here.
-      const resumeId = state.submittedCvId || localStorage.getItem(STORAGE_KEYS.RESUMED_ID) || '';
+      const pendingId = user?.id ? await waitForBuilderSave(user.id, state.draftId) : undefined;
+      const resumeId = state.submittedCvId || pendingId || '';
 
       // Filter out empty work experience entries (entries without a job title)
       const cleanedWorkExperience = state.workExperience.filter(
@@ -231,6 +239,7 @@ function BuilderInner() {
         awards: resumeData.awards ?? [],
         hobbies: resumeData.hobbies ?? [],
         jobDescription: state.jobDescription,
+        currentStep: state.currentStep,
         toggles: state.toggles,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

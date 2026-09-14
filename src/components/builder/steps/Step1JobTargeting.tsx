@@ -1,20 +1,13 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useBuilder } from '../../../context/BuilderContext';
 
 // ── Step 1 ───────────────────────────────────────────────────────────────────
 export default function Step1JobTargeting() {
   const { state, dispatch, nextStep } = useBuilder();
-  const [value, setValue] = useState(state.jobDescription || '');
-
-  // Sync local state when global state changes (e.g., from auto-fill when editing)
-  useEffect(() => {
-    setValue(state.jobDescription || '');
-  }, [state.jobDescription]);
+  const value = state.jobDescription || '';
 
   const handleNext = () => {
     if (!value || value.trim().length === 0) return;
-    dispatch({ type: 'SET_JOB_DESCRIPTION', payload: value });
     nextStep();
   };
 
@@ -43,7 +36,10 @@ export default function Step1JobTargeting() {
         rows={6}
         placeholder="Paste the job description for the position you're applying to…"
         value={value}
-        onChange={e => setValue(e.target.value)}
+        onChange={(event) => {
+          const nextValue = event.target.value;
+          dispatch({ type: 'SET_JOB_DESCRIPTION', payload: nextValue });
+        }}
         className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:border-primary focus:outline-none transition-colors text-sm text-gray-800 placeholder:text-gray-300 resize-none leading-relaxed"
       />
 
