@@ -15,7 +15,7 @@ const WhatYouGet: React.FC = () => {
 
   return (
     <Section className="bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-3xl">
+      <div className=" items-center flex flex-col text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

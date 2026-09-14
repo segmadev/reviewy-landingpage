@@ -35,7 +35,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose,
   onPaymentSuccess: _onPaymentSuccess,
   aiFeatureName,
-  requiredCredits = 10,
+  // requiredCredits = 10,
 }) => {
   const { isAuthenticated, user, login, fetchProfile } = useAuth();
   const { error: showError, success: showSuccess } = useToast();
@@ -501,7 +501,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     Get AI Credits
                   </p>
                   <p className="text-gray-500 text-sm leading-relaxed">
-                    You need <strong className="text-gray-700">{requiredCredits} credits</strong> to use <strong className="text-gray-700">{aiFeatureName}</strong>. Choose a plan that fits your needs.
+                    You need <strong className="text-gray-700"> credits</strong> to use <strong className="text-gray-700">{aiFeatureName}</strong>. Choose a plan that fits your needs.
                   </p>
                 </div>
 
