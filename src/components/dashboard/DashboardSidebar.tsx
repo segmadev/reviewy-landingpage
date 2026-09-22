@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FilePlus, Layers, LogOut, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useStartNewCV } from '../../hooks/useStartNewCV';
 
 const navItems = [
   { label: 'My CVs',        href: '/dashboard',          icon: LayoutDashboard },
-  { label: 'Create New CV', href: '/builder',             icon: FilePlus        },
+  { label: 'Create New CV', href: '/builder',             icon: FilePlus, startsNewCv: true },
   { label: 'Templates',     href: '/dashboard/templates', icon: Layers          },
 ];
 
@@ -17,11 +18,13 @@ export default function DashboardSidebar({ isMobile = false, onItemClick }: Dash
   const location = useLocation();
   const navigate  = useNavigate();
   const { user, logout } = useAuth();
+  const startNewCV = useStartNewCV();
 
   const handleLogout = () => { logout(); navigate('/auth/login'); };
-  const handleNavigate = (path: string) => {
+  const handleNavigate = (path: string, startsNewCv = false) => {
     onItemClick?.();
-    navigate(path);
+    if (startsNewCv) startNewCV();
+    else navigate(path);
   };
 
   const initials = (user?.fullName ?? 'U')
@@ -59,12 +62,12 @@ export default function DashboardSidebar({ isMobile = false, onItemClick }: Dash
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-3 mb-2">Menu</p>
         <ul className="space-y-0.5">
-          {navItems.map(({ label, href, icon: Icon }) => {
+          {navItems.map(({ label, href, icon: Icon, startsNewCv }) => {
             const active = location.pathname === href || location.pathname.startsWith(href + '/');
             return (
               <li key={href}>
                 <button
-                  onClick={() => handleNavigate(href)}
+                  onClick={() => handleNavigate(href, startsNewCv)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-left ${
                     active
                       ? 'text-[#58AF24]'

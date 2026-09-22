@@ -50,9 +50,12 @@ test('new CVs have separate identities and do not overwrite earlier checkpoints'
   const second = builder.reducer(first, { type: 'NEW_CV' });
   assert.notEqual(first.draftId, second.draftId);
   storage.saveBuilderDraft('alice', first);
-  storage.saveBuilderDraft('alice', { ...second, jobDescription: 'Designer', currentStep: 5 });
+  storage.saveBuilderDraft('alice', second);
   assert.equal(storage.loadBuilderDraft('alice', 'server-1').currentStep, 3);
-  assert.equal(storage.loadBuilderDraft('alice').currentStep, 5);
+  assert.equal(storage.loadBuilderDraft('alice').currentStep, 1);
+  assert.equal(storage.loadBuilderDraft('alice').jobDescription, '');
+  assert.equal(storage.loadBuilderDraft('alice').submittedCvId, null);
+  assert.equal(storage.loadBuilderDraft('alice').draftId, second.draftId);
 });
 test('a late create response updates its own checkpoint without activating it', () => {
   const first = draft({ currentStep: 3 });

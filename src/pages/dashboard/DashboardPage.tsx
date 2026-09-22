@@ -16,11 +16,12 @@ import {
   loadLibrary, duplicateCV, renameCV, setActiveCV,
 } from '../../services/cvLibrary';
 import { getUserResumes, deleteResume } from '../../services/api';
-import { clearBuilderDraftTracking } from '../../hooks/useAutoSave';
+import { useStartNewCV } from '../../hooks/useStartNewCV';
 import type { SavedCV } from '../../types/resume';
 import { clearBuilderDraft, loadBuilderDraft, mergeBuilderDrafts } from '../../services/builderDraftStorage';
 import { waitForBuilderSave } from '../../hooks/useAutoSave';
 import { TEMPLATES } from '../../components/templates';
+import type { TemplateOptions } from '../../components/templates';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 // Generate content summary for CV
@@ -38,6 +39,10 @@ function getContentSummary(cv: SavedCV) {
   }
 
   return parts.length > 0 ? parts.join(' · ') : 'Empty CV';
+}
+
+function getTemplateCustomizations(cv: SavedCV): Record<string, Partial<TemplateOptions>> {
+  return cv.templateCustomizations as unknown as Record<string, Partial<TemplateOptions>>;
 }
 
 // ── Toggle ─────────────────────────────────────────────────────────────────────
@@ -266,7 +271,7 @@ function CVDetailPanel({
             data={cv}
             scale={1}
             templateId={cv.templateId}
-            customizations={cv.templateCustomizations as Record<string, any>}
+            customizations={getTemplateCustomizations(cv)}
           />
         </div>
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -406,6 +411,7 @@ export default function DashboardPage() {
   const navigate     = useNavigate();
   const { user, isAuthenticated }     = useAuth();
   const { dispatch } = useBuilder();
+  const handleCreateNew = useStartNewCV();
   const { error: showError, success } = useToast();
 
   const [cvs,          setCVs]          = useState<SavedCV[]>([]);
@@ -428,40 +434,34 @@ export default function DashboardPage() {
   useEffect(() => { localStorage.setItem('rym_pref_hints',    String(showHints)); }, [showHints]);
 
   useEffect(() => {
-    setIsLoading(true);
     let cancelled = false;
 
-    if (isAuthenticated) {
-      // Load CVs from backend
-      getUserResumes()
-        .then((backendCVs) => {
-          if (cancelled) return;
-          // An incomplete resume is still a valuable draft. Delete only on explicit request.
-          const resumes = user?.id ? mergeBuilderDrafts(user.id, backendCVs) : backendCVs;
-          setCVs(resumes);
-          if (resumes.length > 0) setSelectedId(resumes[0].id);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          if (cancelled) return;
-          console.error('Failed to load CVs:', error);
-          // Fallback to local library if backend fails
-          const lib = user?.id ? mergeBuilderDrafts(user.id, [], true) : loadLibrary();
-          setCVs(lib);
-          if (lib.length > 0) setSelectedId(lib[0].id);
-          showError('Failed to load CVs from server');
-          setIsLoading(false);
-        });
-    } else {
-      // Load local drafts for anonymous users
-      const drafts = loadLibrary().map(cv => ({
-        ...cv,
-        isDraft: true,
-      }));
-      setCVs(drafts);
-      if (drafts.length > 0) setSelectedId(drafts[0].id);
-      setIsLoading(false);
-    }
+    const loadCVs = async () => {
+      setIsLoading(true);
+      try {
+        let resumes: SavedCV[];
+        if (isAuthenticated) {
+          const backendCVs = await getUserResumes();
+          resumes = user?.id ? mergeBuilderDrafts(user.id, backendCVs) : backendCVs;
+        } else {
+          resumes = loadLibrary().map(cv => ({ ...cv, isDraft: true }));
+        }
+        if (cancelled) return;
+        setCVs(resumes);
+        setSelectedId(resumes[0]?.id ?? null);
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Failed to load CVs:', error);
+        const localDrafts = user?.id ? mergeBuilderDrafts(user.id, [], true) : loadLibrary();
+        setCVs(localDrafts);
+        setSelectedId(localDrafts[0]?.id ?? null);
+        showError('Failed to load CVs from server');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    void loadCVs();
     return () => { cancelled = true; };
   }, [isAuthenticated, user?.id, showError]);
 
@@ -475,12 +475,6 @@ export default function DashboardPage() {
     : cvs;
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
-  const handleCreateNew = () => {
-    dispatch({ type: 'NEW_CV' });
-    clearBuilderDraftTracking();
-    navigate('/builder');
-  };
-
   const handleEdit = (cv: SavedCV) => {
     dispatch({ type: 'LOAD_CV', payload: cv });
     setActiveCV(cv.id);
@@ -520,7 +514,7 @@ export default function DashboardPage() {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-    } catch (error) {
+    } catch {
       showError('Failed to delete CV');
       setDeleteTarget(null);
     }
@@ -816,7 +810,7 @@ export default function DashboardPage() {
             data={selectedCV}
             scale={1}
             templateId={selectedCV.templateId}
-            customizations={selectedCV.templateCustomizations as Record<string, any>}
+            customizations={getTemplateCustomizations(selectedCV)}
           />
         </div>
       )}
@@ -829,7 +823,7 @@ export default function DashboardPage() {
         <PreviewModal
           data={previewCV}
           templateId={previewCV.templateId}
-          customizations={previewCV.templateCustomizations as Record<string, any>}
+          customizations={getTemplateCustomizations(previewCV)}
           onClose={() => setPreviewCV(null)}
         />
       )}

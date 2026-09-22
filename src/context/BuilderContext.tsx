@@ -286,9 +286,12 @@ export function BuilderProvider({ children }: { children: React.ReactNode }) {
     const next = reducer(latest.current, resolved);
     latest.current = next;
     // Persist in the event handler, before a route change or browser close can interrupt effects.
-    if (hasBuilderProgress(next)) {
-      if (owner) saveBuilderDraft(owner, next);
-      else if (action.type !== 'NEW_CV') saveAnonymousDraft(next);
+    // A signed-in user's NEW_CV checkpoint is intentionally saved even while blank: it marks
+    // the new draft as active so a remount cannot reopen the previously active CV.
+    if (owner && (action.type === 'NEW_CV' || hasBuilderProgress(next))) {
+      saveBuilderDraft(owner, next);
+    } else if (!owner && action.type !== 'NEW_CV' && hasBuilderProgress(next)) {
+      saveAnonymousDraft(next);
     }
     rawDispatch({ type: 'REPLACE_STATE', payload: next });
   }, []);
