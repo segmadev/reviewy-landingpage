@@ -28,6 +28,7 @@ function load(file, mocks = {}, extra = '') {
 }
 const config = { STORAGE_KEYS: { USER: 'rym_user', ACCESS_TOKEN: 'rym_access_token', REFRESH_TOKEN: 'rym_refresh_token' } };
 const storage = load('src/services/builderDraftStorage.ts', { '../config/api.config': config });
+const dateFields = load('src/utils/dateFields.ts');
 const builder = load('src/context/BuilderContext.tsx', {
   '../services/builderDraftStorage': storage,
   '../services/anonymousSession': { getAnonymousDraft: () => null, saveAnonymousDraft() {} },
@@ -105,4 +106,12 @@ test('logout clears credentials but keeps account-scoped CV checkpoints', () => 
   assert.equal(localStorage.getItem('rym_refresh_token'), null);
   assert.equal(storage.loadBuilderDraft('alice').currentStep, 3);
   assert.equal(storage.loadBuilderDraft('bob'), null);
+});
+
+test('date fields cannot pass validation after the month input is cleared', () => {
+  assert.equal(dateFields.monthInputToDate('2026-09'), '2026-09-01');
+  assert.equal(dateFields.monthInputToDate(''), '');
+  assert.equal(dateFields.isDateFieldComplete('2026-09-01'), true);
+  assert.equal(dateFields.isDateFieldComplete(''), false);
+  assert.equal(dateFields.isDateFieldComplete('-01'), false);
 });

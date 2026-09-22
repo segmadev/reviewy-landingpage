@@ -9,6 +9,7 @@ import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import type { WorkExperience } from '../../../types/resume';
+import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
 
 function newEntry(): WorkExperience {
   return { id: Date.now().toString(), company: '', position: '', startDate: '', endDate: '', responsibilities: [''] };
@@ -85,10 +86,14 @@ export default function Step3WorkHistory() {
       const hasPosition = entry.position?.trim().length > 0;
       const hasCompany = entry.company?.trim().length > 0;
       const hasResponsibilities = entry.responsibilities.some((r) => r?.trim().length > 0);
+      const hasStartDate = isDateFieldComplete(entry.startDate);
+      const hasEndDate = isDateFieldComplete(entry.endDate);
 
       // Only validate if job title is filled (incomplete entries are skipped)
       if (hasPosition) {
         if (!hasCompany) errors.push(`Position ${posIdx}: Employer & Location is required`);
+        if (!hasStartDate) errors.push(`Position ${posIdx}: Start Date is required`);
+        if (!hasEndDate) errors.push(`Position ${posIdx}: End Date is required`);
         if (!hasResponsibilities) errors.push(`Position ${posIdx}: At least one Key Achievement/Responsibility is required`);
       }
     });
@@ -118,9 +123,11 @@ export default function Step3WorkHistory() {
           const hasPosition = entry.position?.trim().length > 0;
           const hasCompany = entry.company?.trim().length > 0;
           const hasResponsibilities = entry.responsibilities.some((r) => r?.trim().length > 0);
+          const hasStartDate = isDateFieldComplete(entry.startDate);
+          const hasEndDate = isDateFieldComplete(entry.endDate);
 
           // Show error only if job title is filled but achievements or company are missing
-          const isInvalid = hasPosition && (!hasCompany || !hasResponsibilities);
+          const isInvalid = hasPosition && (!hasCompany || !hasStartDate || !hasEndDate || !hasResponsibilities);
           const borderColor = isInvalid ? 'border-red-200' : 'border-gray-100';
           const bgColor = isInvalid ? 'bg-red-50/50' : 'bg-gray-50';
 
@@ -174,23 +181,24 @@ export default function Step3WorkHistory() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Start Date <span className="text-red-500">*</span></label>
                 <input
                   type="month"
                   value={entry.startDate.slice(0, 7)}
-                  onChange={(e) => update(entry.id, { startDate: e.target.value + '-01' })}
+                  onChange={(e) => update(entry.id, { startDate: monthInputToDate(e.target.value) })}
                   max={new Date().toISOString().slice(0, 7)}
+                  required
                   className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">End Date <span className="text-red-500">*</span></label>
                 <input
                   type="month"
                   value={entry.endDate.slice(0, 7)}
-                  onChange={(e) => update(entry.id, { endDate: e.target.value + '-01' })}
+                  onChange={(e) => update(entry.id, { endDate: monthInputToDate(e.target.value) })}
                   max={new Date().toISOString().slice(0, 7)}
-                  placeholder="Leave blank if current"
+                  required
                   className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
                 />
               </div>

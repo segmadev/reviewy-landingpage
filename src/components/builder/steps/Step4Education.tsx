@@ -6,6 +6,7 @@ import { useBuilder, useBuilderField } from '../../../context/BuilderContext';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { useToast } from '../../../context/ToastContext';
 import type { Education } from '../../../types/resume';
+import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
 
 const levels = ['Bachelors', 'Masters', 'Doctoral', 'HND / Diploma', 'A-Levels', 'Other'];
 
@@ -24,7 +25,12 @@ export default function Step4Education() {
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
 
   const handleNext = () => {
-    const incompleteEducation = entries.filter(e => !e.institution.trim() || !e.degree.trim() || !e.startDate.trim() || !e.endDate.trim());
+    const incompleteEducation = entries.filter(e =>
+      !e.institution.trim() ||
+      !e.degree.trim() ||
+      !isDateFieldComplete(e.startDate) ||
+      !isDateFieldComplete(e.endDate)
+    );
     if (incompleteEducation.length > 0) {
       showError('Please fill in all education fields (Institution, Degree, Start Date, End Date) or delete incomplete entries');
       return;
@@ -104,20 +110,22 @@ export default function Step4Education() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Start Date <span className="text-red-500">*</span></label>
                   <input
                     type="month"
                     value={entry.startDate.slice(0, 7)}
-                    onChange={(e) => update(entry.id, { startDate: e.target.value + '-01' })}
+                    onChange={(e) => update(entry.id, { startDate: monthInputToDate(e.target.value) })}
+                    required
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Graduation Date</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Graduation Date <span className="text-red-500">*</span></label>
                   <input
                     type="month"
                     value={entry.endDate.slice(0, 7)}
-                    onChange={(e) => update(entry.id, { endDate: e.target.value + '-01' })}
+                    onChange={(e) => update(entry.id, { endDate: monthInputToDate(e.target.value) })}
+                    required
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
                   />
                 </div>

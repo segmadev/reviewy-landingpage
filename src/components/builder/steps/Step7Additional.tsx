@@ -6,6 +6,7 @@ import { useToast } from '../../../context/ToastContext';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import type { Certification, Reference } from '../../../types/resume';
+import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
 
 export interface AdditionalInfoSubmission {
   languages: string[];
@@ -46,7 +47,9 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
   const handleNext = () => {
     // Only validate enabled sections
     if (toggles.certifications) {
-      const incompleteCerts = certs.filter(c => !c.title.trim() || !c.issuer.trim() || !c.date.trim());
+      const incompleteCerts = certs.filter(c =>
+        !c.title.trim() || !c.issuer.trim() || !isDateFieldComplete(c.date)
+      );
       if (incompleteCerts.length > 0) {
         showError('Please fill in all certification fields (Title, Issuer, Date) or delete incomplete entries');
         return;
@@ -150,7 +153,8 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
                               className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                             <div className="flex gap-1">
                               <input type="month" value={cert.date.slice(0,7)}
-                                onChange={(e) => setCerts(certs.map(c => c.id === cert.id ? { ...c, date: e.target.value + '-01' } : c))}
+                                onChange={(e) => setCerts(certs.map(c => c.id === cert.id ? { ...c, date: monthInputToDate(e.target.value) } : c))}
+                                required
                                 className="flex-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                               <button
                                 onClick={() => setCerts(certs.filter(c => c.id !== cert.id))}
