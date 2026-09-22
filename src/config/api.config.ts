@@ -39,6 +39,7 @@ export const ENDPOINTS = {
   UPDATE_RESUME: (id: string) => `/resume/resumes/${id}`,
   DELETE_RESUME: (id: string) => `/resume/resumes/${id}`,
   GET_USER_RESUMES: '/resume/resumes/user',
+  UPLOAD_RESUME: '/resume/resumes/upload',
   AI_SUGGESTIONS: '/resume/resumes/ai-suggestions',
 
   // Products

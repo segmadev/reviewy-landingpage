@@ -59,7 +59,7 @@ export function useAutoSave() {
       skipSnapshot.current = false;
       return;
     }
-    if (!isAuthenticated || !user?.id || state.isSubmitting || !hasBuilderProgress(state)) return;
+    if (!isAuthenticated || !user?.id || state.isSubmitting || state.isComplete || !hasBuilderProgress(state)) return;
     const owner = user.id;
     const key = `${owner}:${state.draftId}`;
     const fingerprint = JSON.stringify(state);

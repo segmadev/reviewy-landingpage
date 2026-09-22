@@ -6,6 +6,7 @@ import {
   MoreVertical, Check, X, Search, Layers, ChevronLeft, Menu, Briefcase,
 } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
+import ResumeUploadCard from '../../components/dashboard/ResumeUploadCard';
 import CVPreview from '../../components/builder/CVPreview';
 import PreviewModal from '../../components/builder/PreviewModal';
 import DownloadMenu from '../../components/ui/DownloadMenu';
@@ -444,7 +445,7 @@ export default function DashboardPage() {
           const backendCVs = await getUserResumes();
           resumes = user?.id ? mergeBuilderDrafts(user.id, backendCVs) : backendCVs;
         } else {
-          resumes = loadLibrary().map(cv => ({ ...cv, isDraft: true }));
+          resumes = loadLibrary().map(cv => ({ ...cv, isDraft: cv.isDraft ?? true }));
         }
         if (cancelled) return;
         setCVs(resumes);
@@ -590,6 +591,8 @@ export default function DashboardPage() {
               New CV
             </button>
           </div>
+
+          <ResumeUploadCard />
 
           {/* ── Stats strip — TOP of content ─────────────────────── */}
           {statsItems.length > 0 && (

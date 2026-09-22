@@ -29,6 +29,7 @@ function load(file, mocks = {}, extra = '') {
 const config = { STORAGE_KEYS: { USER: 'rym_user', ACCESS_TOKEN: 'rym_access_token', REFRESH_TOKEN: 'rym_refresh_token' } };
 const storage = load('src/services/builderDraftStorage.ts', { '../config/api.config': config });
 const dateFields = load('src/utils/dateFields.ts');
+const resumeUpload = load('src/services/resumeUpload.ts');
 const builder = load('src/context/BuilderContext.tsx', {
   '../services/builderDraftStorage': storage,
   '../services/anonymousSession': { getAnonymousDraft: () => null, saveAnonymousDraft() {} },
@@ -94,6 +95,24 @@ test('assigning a server ID does not reset Work History after registration/payme
   assert.equal(saved.draftId, state.draftId);
 });
 
+test('Finish and Review marks the resume complete without changing its builder data', () => {
+  const state = draft({ currentStep: 7, submittedCvId: 'resume-1' });
+  const completed = builder.reducer(state, { type: 'MARK_COMPLETE', payload: 'resume-1' });
+  assert.equal(completed.isComplete, true);
+  assert.equal(completed.isSubmitting, false);
+  assert.equal(completed.submittedCvId, 'resume-1');
+  assert.equal(completed.jobDescription, state.jobDescription);
+});
+
+test('completed resumes are no longer overlaid by the local draft badge', () => {
+  const state = draft({ currentStep: 7, submittedCvId: 'resume-1' });
+  storage.saveBuilderDraft('alice', state);
+  storage.clearBuilderDraft('alice', state.draftId);
+  const [completed] = storage.mergeBuilderDrafts('alice', [{ id: 'resume-1', isDraft: false }]);
+  assert.equal(completed.isDraft, false);
+  assert.equal(storage.loadBuilderDraft('alice', state.draftId), null);
+});
+
 test('logout clears credentials but keeps account-scoped CV checkpoints', () => {
   const session = load('src/services/userSessionStorage.ts');
   storage.saveBuilderDraft('alice', draft({ currentStep: 3 }));
@@ -114,4 +133,57 @@ test('date fields cannot pass validation after the month input is cleared', () =
   assert.equal(dateFields.isDateFieldComplete('2026-09-01'), true);
   assert.equal(dateFields.isDateFieldComplete(''), false);
   assert.equal(dateFields.isDateFieldComplete('-01'), false);
+});
+
+test('resume upload accepts only the formats supported by the API', () => {
+  assert.equal(resumeUpload.validateResumeFile({ name: 'candidate.PDF' }), null);
+  assert.equal(resumeUpload.validateResumeFile({ name: 'candidate.docx' }), null);
+  assert.match(resumeUpload.validateResumeFile({ name: 'candidate.doc' }), /PDF or DOCX/);
+  assert.match(resumeUpload.validateResumeFile({ name: 'candidate.exe' }), /PDF or DOCX/);
+});
+
+test('uploaded resume responses are normalized for the existing builder', () => {
+  const resume = resumeUpload.normalizeUploadedResume({
+    data: {
+      id: 'uploaded-1',
+      contactDetails: { fullName: 'Alex Candidate', email: 'alex@example.com' },
+      skills: ['TypeScript'],
+      workExperience: [{ id: 'work-1', company: 'Acme', position: 'Engineer', startDate: '2024-01-01', endDate: '2025-01-01', responsibilities: ['Built products'] }],
+    },
+  }, 'alex-cv.pdf');
+
+  assert.equal(resume.id, 'uploaded-1');
+  assert.equal(resume.name, 'alex-cv');
+  assert.equal(resume.contactDetails.fullName, 'Alex Candidate');
+  assert.equal(resume.contactDetails.country, 'GB');
+  assert.deepEqual(resume.skills, ['TypeScript']);
+  assert.equal(resume.isDraft, true);
+});
+
+test('HTTP client sends FormData without overriding its multipart boundary', async () => {
+  const originalFetch = globalThis.fetch;
+  let request;
+  globalThis.fetch = async (_url, options) => {
+    request = options;
+    return new Response(JSON.stringify({ id: 'uploaded-1' }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  try {
+    const httpModule = load('src/services/http-client.ts', {
+      '../config/api.config': {
+        API_CONFIG: { GATEWAY_URL: 'https://example.test' },
+        STORAGE_KEYS: config.STORAGE_KEYS,
+      },
+    });
+    const formData = new FormData();
+    formData.append('file', new Blob(['resume']), 'resume.pdf');
+    await httpModule.http.post('/resume/resumes/upload', formData);
+    assert.equal(request.body, formData);
+    assert.equal(request.headers['Content-Type'], undefined);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

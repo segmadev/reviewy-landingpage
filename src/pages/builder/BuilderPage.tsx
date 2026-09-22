@@ -22,7 +22,7 @@ import Step6Summary from '../../components/builder/steps/Step6Summary';
 import Step7Additional, { type AdditionalInfoSubmission } from '../../components/builder/steps/Step7Additional';
 import { submitCV, getResumeById, getUserCreditBalance, convertResumeToNew, ResumeNotFoundError } from '../../services/api';
 import { HttpError } from '../../services/http-client';
-import { upsertCV, generateCVId, clearActiveCV } from '../../services/cvLibrary';
+import { upsertCV, clearActiveCV } from '../../services/cvLibrary';
 import { BUILDER_CACHE_KEY, waitForBuilderSave } from '../../hooks/useAutoSave';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -30,7 +30,7 @@ import { STORAGE_KEYS } from '../../config/api.config';
 import AnonymousSessionWarning from '../../components/AnonymousSessionWarning';
 import ResumeNotFoundModal from '../../components/builder/ResumeNotFoundModal';
 import type { ResumeData, SavedCV } from '../../types/resume';
-import { loadBuilderDraft } from '../../services/builderDraftStorage';
+import { clearBuilderDraft, loadBuilderDraft } from '../../services/builderDraftStorage';
 
 const DARK_PANEL = '#1c1c1e';
 
@@ -212,11 +212,11 @@ function BuilderInner() {
         hobbies: additionalInfo?.hobbies ?? state.hobbies ?? [],
       };
 
-      // Persist to local CV library
-      // Always prefer the backend resumeId, fall back to submitted ID if no resumeId yet
-      const cvId = resumeId || state.submittedCvId || generateCVId();
+      // Submit first so every local record uses the backend's authoritative ID.
+      const result = await submitCV(resumeId, resumeData);
+
       const savedCV: SavedCV = {
-        id: cvId,
+        id: result.cvId,
         name: state.contactDetails.fullName
           ? `${state.contactDetails.fullName}'s CV`
           : 'My CV',
@@ -243,19 +243,17 @@ function BuilderInner() {
         toggles: state.toggles,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isDraft: false,
       };
       upsertCV(savedCV);
       clearActiveCV();
-
-      // Submit to backend with cleaned work experience
-      // Always use the resumeId returned from backend, not locally-generated ID
-      const result = await submitCV(resumeId, resumeData);
 
       success('CV saved successfully!');
       // Use the id the backend actually returned — when resumeId was empty this
       // just created a brand-new resume, so result.cvId is the only place its real
       // id exists; the local resumeId variable would be empty/stale here.
-      dispatch({ type: 'SET_SUBMITTED', payload: result.cvId });
+      dispatch({ type: 'MARK_COMPLETE', payload: result.cvId });
+      clearBuilderDraft(user?.id ?? null, state.draftId);
       localStorage.removeItem(STORAGE_KEYS.RESUMED_ID);
       // Clear builder cache after successful save
       localStorage.removeItem(BUILDER_CACHE_KEY);
@@ -303,7 +301,8 @@ function BuilderInner() {
       const result = await convertResumeToNew({ ...state, workExperience: cleanedWorkExperience });
 
       success('Resume converted to new successfully!');
-      dispatch({ type: 'SET_SUBMITTED', payload: result.cvId });
+      dispatch({ type: 'MARK_COMPLETE', payload: result.cvId });
+      clearBuilderDraft(user?.id ?? null, state.draftId);
       localStorage.setItem(STORAGE_KEYS.RESUMED_ID, result.cvId);
       localStorage.removeItem(BUILDER_CACHE_KEY);
 

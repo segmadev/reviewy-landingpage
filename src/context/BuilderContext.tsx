@@ -27,6 +27,7 @@ export interface BuilderState extends ResumeData {
     references: boolean;
   };
   isSubmitting: boolean;
+  isComplete: boolean;
   submittedCvId: string | null;
 }
 
@@ -45,6 +46,7 @@ const initialState: BuilderState = {
     references: false,
   },
   isSubmitting: false,
+  isComplete: false,
   submittedCvId: null,
   // Resume fields — start blank; populated as user progresses
   contactDetails: { fullName: '', address: '', city: '', postcode: '', phone: '', email: '', country: 'GB' },
@@ -147,6 +149,7 @@ type Action =
   | { type: 'TOGGLE_SECTION'; payload: keyof BuilderState['toggles'] }
   | { type: 'SET_SUBMITTING'; payload: boolean }
   | { type: 'SET_SUBMITTED'; payload: string }
+  | { type: 'MARK_COMPLETE'; payload: string }
   | { type: 'LOAD_SAMPLE' }
   | { type: 'AUTOFILL'; payload: ExtractionResult }
   | { type: 'LOAD_CV'; payload: SavedCV }
@@ -189,6 +192,7 @@ function reducer(state: BuilderState, action: Action): BuilderState {
       };
     case 'SET_SUBMITTING': return { ...state, isSubmitting: action.payload };
     case 'SET_SUBMITTED': return { ...state, submittedCvId: action.payload, isSubmitting: false };
+    case 'MARK_COMPLETE': return { ...state, submittedCvId: action.payload, isSubmitting: false, isComplete: true };
     case 'AUTOFILL': {
       const p = action.payload;
       const contact = {
@@ -288,7 +292,7 @@ export function BuilderProvider({ children }: { children: React.ReactNode }) {
     // Persist in the event handler, before a route change or browser close can interrupt effects.
     // A signed-in user's NEW_CV checkpoint is intentionally saved even while blank: it marks
     // the new draft as active so a remount cannot reopen the previously active CV.
-    if (owner && (action.type === 'NEW_CV' || hasBuilderProgress(next))) {
+    if (owner && action.type !== 'MARK_COMPLETE' && (action.type === 'NEW_CV' || hasBuilderProgress(next))) {
       saveBuilderDraft(owner, next);
     } else if (!owner && action.type !== 'NEW_CV' && hasBuilderProgress(next)) {
       saveAnonymousDraft(next);

@@ -125,10 +125,11 @@ export async function httpClient(
 ): Promise<unknown> {
   const { method = 'GET', headers = {}, body, signal } = config;
   const url = `${API_CONFIG.GATEWAY_URL}${endpoint}`;
+  const isMultipart = typeof FormData !== 'undefined' && body instanceof FormData;
 
-  // Prepare headers
+  // Let the browser generate the multipart boundary for FormData requests.
   const finalHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isMultipart ? {} : { 'Content-Type': 'application/json' }),
     ...headers,
   };
 
@@ -149,7 +150,7 @@ export async function httpClient(
   };
 
   if (body) {
-    fetchOptions.body = JSON.stringify(body);
+    fetchOptions.body = isMultipart ? body : JSON.stringify(body);
   }
 
   try {
@@ -189,7 +190,7 @@ export async function httpClient(
       throw new HttpError(response.status, data, errorMsg);
     }
 
-    console.log(`[HTTP] ${method} ${endpoint} → 200`);
+    console.log(`[HTTP] ${method} ${endpoint} → ${response.status}`);
     return data;
   } catch (error) {
     // Handle network errors

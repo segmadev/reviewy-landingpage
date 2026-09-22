@@ -79,6 +79,7 @@ export default function BuilderResultPage() {
       toggles: state.toggles,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      isDraft: false,
     };
     upsertCV(saved);
     return saved;

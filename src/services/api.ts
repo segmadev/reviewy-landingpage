@@ -8,6 +8,7 @@
 import type { AuthResponse, ResumeData, SavedCV, User } from '../types/resume';
 import { http, HttpError } from './http-client';
 import { ENDPOINTS } from '../config/api.config';
+import { normalizeUploadedResume } from './resumeUpload';
 
 // Custom error for when resume is not found on backend
 export class ResumeNotFoundError extends Error {
@@ -92,15 +93,13 @@ export async function saveBuilderStep(resumeId: string, data: Partial<ResumeData
     if (!resumeId) {
       // Create new resume
       console.log('[API] No resumeId in saveBuilderStep, creating new resume');
-      const response = (await http.post(ENDPOINTS.CREATE_RESUME, {
-        ...data,
-      })) as { id: string };
+      const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...data, isDraft: true })) as { id: string };
       console.log(`[API] saveBuilderStep created new resume with ID: ${response.id}`);
       return response.id;
     } else {
       // Update existing resume
       console.log(`[API] Updating existing resume ${resumeId} in saveBuilderStep`);
-      await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), data);
+      await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), { ...data, isDraft: true });
       console.log(`[API] saveBuilderStep updated resume ${resumeId} successfully`);
       return resumeId;
     }
@@ -133,7 +132,7 @@ export async function convertResumeToNew(data: ResumeData): Promise<{ cvId: stri
       hobbies: data.hobbies || [],
     };
 
-    const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
+    const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...cleanData, isDraft: false })) as { id: string };
     console.log(`[API] Resume converted to new with ID: ${response.id}`);
     return { cvId: response.id };
   } catch (error) {
@@ -170,14 +169,14 @@ export async function submitCV(resumeId: string, data: ResumeData): Promise<{ cv
     if (!resumeId || resumeId.trim() === '') {
       // Create new resume
       console.log('[API] No resumeId provided, creating new resume via POST');
-      const response = (await http.post(ENDPOINTS.CREATE_RESUME, cleanData)) as { id: string };
+      const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...cleanData, isDraft: false })) as { id: string };
       console.log(`[API] New resume created with ID: ${response.id}`);
       return { cvId: response.id };
     } else {
       // Try to update existing resume
       console.log(`[API] Attempting to update resume ${resumeId} via PATCH`);
       try {
-        await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), cleanData);
+        await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), { ...cleanData, isDraft: false });
         console.log(`[API] Resume ${resumeId} updated successfully`);
         return { cvId: resumeId };
       } catch (error) {
@@ -210,6 +209,22 @@ export async function getUserResumes(): Promise<SavedCV[]> {
   } catch (error) {
     if (error instanceof HttpError) {
       throw new Error('Failed to load resumes.');
+    }
+    throw error;
+  }
+}
+
+export async function uploadResume(file: File, signal?: AbortSignal): Promise<SavedCV> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await http.post(ENDPOINTS.UPLOAD_RESUME, formData, { signal });
+    return normalizeUploadedResume(response, file.name);
+  } catch (error) {
+    if (error instanceof HttpError) {
+      const message = (error.data as { message?: string } | null)?.message;
+      throw new Error(message || 'We could not upload this resume. Please check the file and try again.');
     }
     throw error;
   }
@@ -388,12 +403,18 @@ export interface Product {
   active: boolean;
 }
 
+interface ProductApiResponse extends Partial<Product> {
+  _id?: string;
+  productId?: string;
+  pricing?: Array<{ amount?: number; currency?: string }>;
+}
+
 export async function getActiveProducts(): Promise<Product[]> {
   try {
-    const response = (await http.get('/product/active')) as any[];
+    const response = (await http.get('/product/active')) as ProductApiResponse[];
 
     // Normalize product objects to ensure all required fields exist
-    return response.map((product: any) => {
+    return response.map((product) => {
       // Extract price from pricing array if available
       const pricing = product.pricing?.[0];
       const price = pricing?.amount || product.price || 0;
