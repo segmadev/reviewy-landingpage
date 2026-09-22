@@ -86,7 +86,7 @@ export function useAutoSave() {
       } catch (error) {
         console.error('Auto-save failed:', error);
         setSaveStatus('error');
-        showError('Your draft is saved on this device. Server sync failed; reconnect and try again.');
+        // showError('Your draft is saved on this device. Server sync failed; reconnect and try again.');
         retry = setTimeout(() => setRevision(value => value + 1), 10000);
       } finally {
         inFlightSaves.delete(key);
