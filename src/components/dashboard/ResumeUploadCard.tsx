@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
-import { CheckCircle2, FileText, LoaderCircle, UploadCloud, X } from 'lucide-react';
+import { FileText, LoaderCircle, UploadCloud, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBuilder } from '../../context/BuilderContext';
 import { useToast } from '../../context/ToastContext';
