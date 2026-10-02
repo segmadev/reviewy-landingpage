@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FilePlus, Edit3, Trash2, FileText, Eye, Copy,
-  MoreVertical, Check, X, Search, Layers, ChevronLeft, Menu, Briefcase,
+  MoreVertical, Check, X, Search, Layers, ChevronLeft, Menu, Briefcase, ListChecks,
 } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import ResumeUploadCard from '../../components/dashboard/ResumeUploadCard';
@@ -14,7 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useBuilder } from '../../context/BuilderContext';
 import { useToast } from '../../context/ToastContext';
 import {
-  loadLibrary, duplicateCV, renameCV, setActiveCV,
+  loadLibrary, duplicateCV, renameCV, setActiveCV, deleteCV as deleteLocalCV,
 } from '../../services/cvLibrary';
 import { getUserResumes, deleteResume } from '../../services/api';
 import { useStartNewCV } from '../../hooks/useStartNewCV';
@@ -66,10 +66,10 @@ function Toggle({ active, onToggle }: { active: boolean; onToggle: () => void })
 
 // ── CV Row ─────────────────────────────────────────────────────────────────────
 function CVRow({
-  cv, isSelected, onSelect, onEdit, onDelete, onDuplicate, onRename,
+  cv, isSelected, isBulkSelecting, isBulkSelected, onSelect, onToggleBulk, onEdit, onDelete, onDuplicate, onRename,
 }: {
-  cv: SavedCV; isSelected: boolean;
-  onSelect: () => void; onEdit: () => void; onDelete: () => void;
+  cv: SavedCV; isSelected: boolean; isBulkSelecting: boolean; isBulkSelected: boolean;
+  onSelect: () => void; onToggleBulk: () => void; onEdit: () => void; onDelete: () => void;
   onDuplicate: () => void; onRename: (name: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -103,19 +103,35 @@ function CVRow({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
-      onClick={onSelect}
+      onClick={isBulkSelecting ? onToggleBulk : onSelect}
       className="flex items-center gap-3 px-4 cursor-pointer transition-all"
       style={{
         height: 76, borderRadius: 8,
-        background: isSelected ? 'rgba(104,174,36,0.06)' : '#ffffff',
-        border: `1.5px solid ${isSelected ? 'rgba(104,174,36,0.3)' : '#E5E7EB'}`,
+        background: isBulkSelected || isSelected ? 'rgba(104,174,36,0.06)' : '#ffffff',
+        border: `1.5px solid ${isBulkSelected || isSelected ? 'rgba(104,174,36,0.3)' : '#E5E7EB'}`,
       }}
     >
+      {isBulkSelecting && (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={isBulkSelected}
+          aria-label={`${isBulkSelected ? 'Deselect' : 'Select'} ${cv.name}`}
+          onClick={event => { event.stopPropagation(); onToggleBulk(); }}
+          className="w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors"
+          style={{
+            background: isBulkSelected ? '#68AE24' : '#ffffff',
+            borderColor: isBulkSelected ? '#68AE24' : '#D1D5DB',
+          }}
+        >
+          {isBulkSelected && <Check className="w-3.5 h-3.5 text-white" />}
+        </button>
+      )}
       <div
         className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-        style={{ background: isSelected ? 'rgba(104,174,36,0.12)' : '#F3F4F6' }}
+        style={{ background: isBulkSelected || isSelected ? 'rgba(104,174,36,0.12)' : '#F3F4F6' }}
       >
-        <FileText className="w-4 h-4" style={{ color: isSelected ? '#68AE24' : '#9CA3AF' }} />
+        <FileText className="w-4 h-4" style={{ color: isBulkSelected || isSelected ? '#68AE24' : '#9CA3AF' }} />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -152,7 +168,7 @@ function CVRow({
         </p>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+      {!isBulkSelecting && <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
         <button
           onClick={onEdit}
           className="flex items-center gap-1.5 px-2 sm:px-3 text-white text-xs font-semibold hover:opacity-90 transition-opacity"
@@ -195,7 +211,7 @@ function CVRow({
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </div>}
     </motion.div>
   );
 }
@@ -361,7 +377,15 @@ function ToggleRow({ label, description, active, onToggle }: { label: string; de
 }
 
 // ── Delete Modal ───────────────────────────────────────────────────────────────
-function DeleteModal({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
+function DeleteModal({ targets, isDeleting, onConfirm, onCancel }: {
+  targets: SavedCV[];
+  isDeleting: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const count = targets.length;
+  const isBulkDelete = count > 1;
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center px-4">
       <motion.div
@@ -372,13 +396,21 @@ function DeleteModal({ name, onConfirm, onCancel }: { name: string; onConfirm: (
         <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
           <Trash2 className="w-6 h-6 text-red-500" />
         </div>
-        <h3 className="text-base font-bold text-gray-900 text-center mb-1">Delete CV?</h3>
+        <h3 className="text-base font-bold text-gray-900 text-center mb-1">
+          {isBulkDelete ? `Delete ${count} CVs?` : 'Delete CV?'}
+        </h3>
         <p className="text-sm text-gray-500 text-center mb-6">
-          "<span className="font-medium text-gray-700">{name}</span>" will be permanently removed.
+          {isBulkDelete ? (
+            `${count} selected CVs will be permanently removed.`
+          ) : (
+            <>"<span className="font-medium text-gray-700">{targets[0]?.name}</span>" will be permanently removed.</>
+          )}
         </p>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
-          <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-opacity" style={{ background: '#F30000' }}>Delete</button>
+          <button disabled={isDeleting} onClick={onCancel} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">Cancel</button>
+          <button disabled={isDeleting} onClick={onConfirm} className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: '#F30000' }}>
+            {isDeleting ? 'Deleting…' : isBulkDelete ? `Delete ${count}` : 'Delete'}
+          </button>
         </div>
       </motion.div>
     </div>
@@ -418,7 +450,10 @@ export default function DashboardPage() {
   const [cvs,          setCVs]          = useState<SavedCV[]>([]);
   const [isLoading,    setIsLoading]    = useState(true);
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<SavedCV | null>(null);
+  const [deleteTargets, setDeleteTargets] = useState<SavedCV[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkSelecting, setIsBulkSelecting] = useState(false);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<Set<string>>(() => new Set());
   const [previewCV,    setPreviewCV]    = useState<SavedCV | null>(null);
   const [search,       setSearch]       = useState('');
   const [mobileView,   setMobileView]   = useState<'list' | 'detail'>('list');
@@ -450,6 +485,8 @@ export default function DashboardPage() {
         if (cancelled) return;
         setCVs(resumes);
         setSelectedId(resumes[0]?.id ?? null);
+        setBulkSelectedIds(new Set());
+        setIsBulkSelecting(false);
       } catch (error) {
         if (cancelled) return;
         console.error('Failed to load CVs:', error);
@@ -474,6 +511,7 @@ export default function DashboardPage() {
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.templateId.toLowerCase().includes(search.toLowerCase()))
     : cvs;
+  const allFilteredSelected = filtered.length > 0 && filtered.every(cv => bulkSelectedIds.has(cv.id));
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
   const handleEdit = (cv: SavedCV) => {
@@ -498,26 +536,73 @@ export default function DashboardPage() {
     setCVs(prev => prev.map(c => c.id === id ? { ...c, name } : c));
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
-    try {
-      // Delete from backend
-      const checkpoint = user?.id ? loadBuilderDraft(user.id, deleteTarget.id) : null;
-      const pendingId = checkpoint && user?.id ? await waitForBuilderSave(user.id, checkpoint.draftId) : undefined;
-      if (!checkpoint || checkpoint.submittedCvId || pendingId) {
-        await deleteResume(checkpoint?.submittedCvId || pendingId || deleteTarget.id);
-      }
-      clearBuilderDraft(user?.id ?? null, deleteTarget.id);
-      dispatch({ type: 'NEW_CV' });
-      success('CV deleted successfully');
+  const toggleBulkSelection = (id: string) => {
+    setBulkSelectedIds(current => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-      // Reload page after short delay to ensure backend sync
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch {
-      showError('Failed to delete CV');
-      setDeleteTarget(null);
+  const toggleAllFiltered = () => {
+    setBulkSelectedIds(current => {
+      const next = new Set(current);
+      if (allFilteredSelected) filtered.forEach(cv => next.delete(cv.id));
+      else filtered.forEach(cv => next.add(cv.id));
+      return next;
+    });
+  };
+
+  const stopBulkSelection = () => {
+    setIsBulkSelecting(false);
+    setBulkSelectedIds(new Set());
+  };
+
+  const deleteCVRecord = async (cv: SavedCV): Promise<void> => {
+    if (isAuthenticated) {
+      const checkpoint = user?.id ? loadBuilderDraft(user.id, cv.id) : null;
+      const pendingId = checkpoint && user?.id
+        ? await waitForBuilderSave(user.id, checkpoint.draftId)
+        : undefined;
+
+      // A checkpoint without a server ID is a device-only draft.
+      if (!checkpoint || checkpoint.submittedCvId || pendingId) {
+        await deleteResume(checkpoint?.submittedCvId || pendingId || cv.id);
+      }
+      clearBuilderDraft(user?.id ?? null, cv.id);
+    }
+    deleteLocalCV(cv.id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteTargets.length === 0 || isDeleting) return;
+    setIsDeleting(true);
+
+    const targets = [...deleteTargets];
+    const results = await Promise.allSettled(targets.map(deleteCVRecord));
+    const deletedIds = new Set(
+      targets.filter((_, index) => results[index].status === 'fulfilled').map(cv => cv.id)
+    );
+    const failedTargets = targets.filter((_, index) => results[index].status === 'rejected');
+
+    if (deletedIds.size > 0) {
+      setCVs(current => {
+        const remaining = current.filter(cv => !deletedIds.has(cv.id));
+        setSelectedId(selected => selected && deletedIds.has(selected) ? remaining[0]?.id ?? null : selected);
+        return remaining;
+      });
+      setBulkSelectedIds(current => new Set([...current].filter(id => !deletedIds.has(id))));
+      success(`${deletedIds.size} CV${deletedIds.size === 1 ? '' : 's'} deleted successfully`);
+    }
+
+    setDeleteTargets(failedTargets);
+    setIsDeleting(false);
+
+    if (failedTargets.length > 0) {
+      showError(`Failed to delete ${failedTargets.length} CV${failedTargets.length === 1 ? '' : 's'}. Please try again.`);
+    } else {
+      stopBulkSelection();
     }
   };
 
@@ -710,13 +795,57 @@ export default function DashboardPage() {
                 <div className={`lg:col-span-2 flex flex-col gap-3 ${mobileView === 'list' ? 'block' : 'hidden lg:flex'}`}>
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Your CVs</p>
-                    <span
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: '#EDF2E9', color: '#3a7c10' }}
-                    >
-                      {filtered.length}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {isBulkSelecting ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={toggleAllFiltered}
+                            className="text-[11px] font-semibold text-[#4f8f20] hover:text-[#3a7c10]"
+                          >
+                            {allFilteredSelected ? 'Deselect all' : 'Select all'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={stopBulkSelection}
+                            className="text-[11px] font-semibold text-gray-500 hover:text-gray-700"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : cvs.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsBulkSelecting(true)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-[#4f8f20] hover:text-[#3a7c10]"
+                        >
+                          <ListChecks className="w-3.5 h-3.5" /> Select
+                        </button>
+                      ) : null}
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: '#EDF2E9', color: '#3a7c10' }}
+                      >
+                        {filtered.length}
+                      </span>
+                    </div>
                   </div>
+
+                  {isBulkSelecting && (
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+                      <span className="text-xs font-medium text-gray-700">
+                        {bulkSelectedIds.size} selected
+                      </span>
+                      <button
+                        type="button"
+                        disabled={bulkSelectedIds.size === 0}
+                        onClick={() => setDeleteTargets(cvs.filter(cv => bulkSelectedIds.has(cv.id)))}
+                        className="flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete selected
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-2 sm:gap-3 max-h-[60vh] overflow-y-auto">
                     <AnimatePresence>
@@ -725,12 +854,15 @@ export default function DashboardPage() {
                           key={cv.id}
                           cv={cv}
                           isSelected={selectedId === cv.id}
+                          isBulkSelecting={isBulkSelecting}
+                          isBulkSelected={bulkSelectedIds.has(cv.id)}
+                          onToggleBulk={() => toggleBulkSelection(cv.id)}
                           onSelect={() => {
                             setSelectedId(cv.id);
                             setMobileView('detail');
                           }}
                           onEdit={() => handleEdit(cv)}
-                          onDelete={() => setDeleteTarget(cv)}
+                          onDelete={() => setDeleteTargets([cv])}
                           onDuplicate={() => handleDuplicate(cv.id)}
                           onRename={name => handleRename(cv.id, name)}
                         />
@@ -818,8 +950,13 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {deleteTarget && (
-        <DeleteModal name={deleteTarget.name} onConfirm={handleDeleteConfirm} onCancel={() => setDeleteTarget(null)} />
+      {deleteTargets.length > 0 && (
+        <DeleteModal
+          targets={deleteTargets}
+          isDeleting={isDeleting}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTargets([])}
+        />
       )}
 
       {previewCV && (
