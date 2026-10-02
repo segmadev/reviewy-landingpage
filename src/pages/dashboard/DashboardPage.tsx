@@ -587,11 +587,13 @@ export default function DashboardPage() {
     const failedTargets = targets.filter((_, index) => results[index].status === 'rejected');
 
     if (deletedIds.size > 0) {
-      setCVs(current => {
-        const remaining = current.filter(cv => !deletedIds.has(cv.id));
-        setSelectedId(selected => selected && deletedIds.has(selected) ? remaining[0]?.id ?? null : selected);
-        return remaining;
-      });
+       setCVs(current => {
+     const remaining = current.filter(cv => !deletedIds.has(cv.id));
+       setSelectedId(sel => sel && deletedIds.has(sel) ? remaining[0]?.id ?? null : sel);
+       return remaining;
+     });
+
+      
       setBulkSelectedIds(current => new Set([...current].filter(id => !deletedIds.has(id))));
       success(`${deletedIds.size} CV${deletedIds.size === 1 ? '' : 's'} deleted successfully`);
     }
