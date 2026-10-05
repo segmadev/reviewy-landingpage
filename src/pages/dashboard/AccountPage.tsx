@@ -87,14 +87,16 @@ export default function AccountPage() {
         await updateProfile({ fullName, email });
         showToast('Profile updated successfully');
       } else {
-        if (!currentPw || !newPw) { showToast('Please fill in all password fields'); setSaving(false); return; }
-        if (newPw !== confirmPw)  { showToast('New passwords do not match'); setSaving(false); return; }
+        if (!currentPw || !newPw || !confirmPw) { showToast('Please fill in all password fields'); return; }
+        if (newPw.length < 8) { showToast('New password must be at least 8 characters'); return; }
+        if (newPw !== confirmPw) { showToast('New passwords do not match'); return; }
+        if (currentPw === newPw) { showToast('New password must be different from your current password'); return; }
         await changePassword(currentPw, newPw);
         setCurrentPw(''); setNewPw(''); setConfirmPw('');
         showToast('Password changed successfully');
       }
-    } catch {
-      showToast('Something went wrong. Please try again.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }

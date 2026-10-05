@@ -9,6 +9,7 @@ import type { AuthResponse, ResumeData, SavedCV, User } from '../types/resume';
 import { http, HttpError } from './http-client';
 import { ENDPOINTS } from '../config/api.config';
 import { normalizeUploadedResume } from './resumeUpload';
+import { getApiErrorMessage, getSignupErrorMessage } from './apiErrorMessages';
 
 // Custom error for when resume is not found on backend
 export class ResumeNotFoundError extends Error {
@@ -50,9 +51,7 @@ export async function registerUser(data: SignupData): Promise<{ accessToken: str
     };
   } catch (error) {
     if (error instanceof HttpError) {
-      throw new Error(
-        (error.data as { message?: string })?.message || 'Signup failed. Please try again.'
-      );
+      throw new Error(getSignupErrorMessage(error));
     }
     throw error;
   }
@@ -368,12 +367,17 @@ export async function updateProfile(data: { fullName: string; email: string }): 
   }
 }
 
-export async function changePassword(current: string, next: string): Promise<void> {
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   try {
-    await http.put(ENDPOINTS.GET_PROFILE, { password: next, currentPassword: current });
+    await http.put(ENDPOINTS.CHANGE_PASSWORD, { currentPassword, newPassword });
   } catch (error) {
     if (error instanceof HttpError) {
-      throw new Error('Failed to change password.');
+      throw new Error(
+        getApiErrorMessage(
+          error,
+          'Unable to change your password. Please verify your current password and try again.'
+        )
+      );
     }
     throw error;
   }

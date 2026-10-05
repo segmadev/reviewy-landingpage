@@ -31,6 +31,7 @@ export const ENDPOINTS = {
   LOGOUT: (userId: string) => `/user/logout/${userId}`,
   REFRESH_TOKEN: '/user/refresh-token',
   GET_PROFILE: '/user/profile',
+  CHANGE_PASSWORD: '/user/profile/password',
   GET_USER: (userId: string) => `/user/${userId}`,
 
   // Resumes
