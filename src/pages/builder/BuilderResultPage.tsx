@@ -10,7 +10,6 @@ import CVPreview from '../../components/builder/CVPreview';
 import PreviewModal from '../../components/builder/PreviewModal';
 import DownloadMenu from '../../components/ui/DownloadMenu';
 import { useBuilder } from '../../context/BuilderContext';
-import { sampleResumeData } from '../../services/mockData';
 import { upsertCV, generateCVId } from '../../services/cvLibrary';
 import { clearBuilderDraftTracking } from '../../hooks/useAutoSave';
 import { getResumeById } from '../../services/api';
@@ -50,8 +49,8 @@ export default function BuilderResultPage() {
     }
   }, [cvId, state.submittedCvId]);
 
-  // Use loaded CV data from backend, fallback to state, then mock data
-  const cvData = loadedCV || (state.contactDetails.fullName ? state : sampleResumeData);
+  // Render only data loaded from the API or entered in the active builder.
+  const cvData = loadedCV || state;
   const cvName = (loadedCV || state.contactDetails.fullName)
     ? `${(loadedCV || state).contactDetails.fullName}'s CV`
     : 'My CV';

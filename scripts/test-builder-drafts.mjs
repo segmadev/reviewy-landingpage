@@ -33,7 +33,6 @@ const resumeUpload = load('src/services/resumeUpload.ts');
 const builder = load('src/context/BuilderContext.tsx', {
   '../services/builderDraftStorage': storage,
   '../services/anonymousSession': { getAnonymousDraft: () => null, saveAnonymousDraft() {} },
-  '../services/mockData': { sampleResumeData: {} },
 }, '\nexport { reducer, hydrateBuilderState, inferResumeStep };');
 beforeEach(() => values.clear());
 const draft = (patch = {}) => builder.hydrateBuilderState({ jobDescription: 'Engineer', ...patch });

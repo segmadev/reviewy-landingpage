@@ -7,7 +7,6 @@ import TemplateCustomizer from '../../components/templates/TemplateCustomizer';
 import PreviewModal from '../../components/builder/PreviewModal';
 import { useBuilder } from '../../context/BuilderContext';
 import { Button } from '../../components/ui/Button';
-import { sampleResumeData } from '../../services/mockData';
 
 const PREVIEW_SCALE = 0.33;
 
@@ -17,8 +16,7 @@ export default function ChooseTemplatePage() {
   const [selected, setSelected] = useState(state.templateId || 'classic');
   const [showModal, setShowModal] = useState(false);
 
-  // Use builder data if available, otherwise show sample data
-  const previewData = state.contactDetails.fullName ? state : sampleResumeData;
+  const previewData = state;
 
   const handleContinue = () => {
     dispatch({ type: 'SET_TEMPLATE', payload: selected });

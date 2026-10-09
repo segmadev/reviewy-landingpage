@@ -2,7 +2,6 @@ import React, { createContext, useContext, useReducer, useCallback, useRef } fro
 import type { ResumeData, WorkExperience, Education, Certification, Reference, SavedCV } from '../types/resume';
 import type { TemplateOptions } from '../components/templates/utils';
 import type { ExtractionResult } from '../services/extractCvData';
-import { sampleResumeData } from '../services/mockData';
 import {
   getStoredBuilderUserId,
   LEGACY_BUILDER_CACHE_KEY,
@@ -150,7 +149,6 @@ type Action =
   | { type: 'SET_SUBMITTING'; payload: boolean }
   | { type: 'SET_SUBMITTED'; payload: string }
   | { type: 'MARK_COMPLETE'; payload: string }
-  | { type: 'LOAD_SAMPLE' }
   | { type: 'AUTOFILL'; payload: ExtractionResult }
   | { type: 'LOAD_CV'; payload: SavedCV }
   | { type: 'RESTORE_DRAFT'; payload: BuilderState }
@@ -245,25 +243,6 @@ function reducer(state: BuilderState, action: Action): BuilderState {
       };
     }
 
-    case 'LOAD_SAMPLE':
-      return {
-        ...state,
-        ...sampleResumeData,
-        workExperience: sampleResumeData.workExperience,
-        education: sampleResumeData.education,
-        certifications: sampleResumeData.certifications ?? [],
-        references: sampleResumeData.references ?? [],
-        languages: sampleResumeData.languages ?? [],
-        awards: sampleResumeData.awards ?? [],
-        hobbies: sampleResumeData.hobbies ?? [],
-        toggles: {
-          languages: true,
-          certifications: true,
-          awards: true,
-          hobbies: true,
-          references: true,
-        },
-      };
     default:
       return state;
   }

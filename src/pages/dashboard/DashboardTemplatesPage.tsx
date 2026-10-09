@@ -18,7 +18,6 @@ import CVPreview from '../../components/builder/CVPreview';
 import PreviewModal from '../../components/builder/PreviewModal';
 import { TEMPLATES, resolveOptions } from '../../components/templates';
 import { useBuilder } from '../../context/BuilderContext';
-import { sampleResumeData } from '../../services/mockData';
 
 export default function DashboardTemplatesPage() {
   const navigate = useNavigate();
@@ -27,7 +26,7 @@ export default function DashboardTemplatesPage() {
   const [showModal, setShowModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const previewData = state.contactDetails.fullName ? state : sampleResumeData;
+  const previewData = state;
   const selectedTemplate = TEMPLATES.find(t => t.id === selected) ?? TEMPLATES[0];
   const opts = resolveOptions(selected, state.templateCustomizations);
 
