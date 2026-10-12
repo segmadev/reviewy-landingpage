@@ -1,5 +1,5 @@
 import type { ResumeData } from '../../types/resume';
-import { formatDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
+import { formatDate, formatEndDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
 import type { TemplateOptions } from './utils';
 
 interface Props { data: Partial<ResumeData>; scale?: number; options?: TemplateOptions; }
@@ -82,7 +82,7 @@ export default function ModernTemplate({ data, scale: s = 1, options }: Props) {
                     <span style={{ color: '#6b7280', fontSize: `${8.5 * s}px` }}> · {exp.company}</span>
                   </div>
                   <span style={{ fontSize: `${7.5 * s}px`, fontWeight: 600, color: accent, backgroundColor: accentLight, padding: `${1 * s}px ${5 * s}px`, borderRadius: `${20 * s}px`, flexShrink: 0 }}>
-                    {formatDate(exp.startDate)} – {exp.endDate ? formatDate(exp.endDate) : 'Present'}
+                    {formatDate(exp.startDate)} – {formatEndDate(exp.endDate)}
                   </span>
                 </div>
                 {exp.responsibilities?.length > 0 && (

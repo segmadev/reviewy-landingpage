@@ -1,5 +1,5 @@
 import type { ResumeData } from '../../types/resume';
-import { formatDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
+import { formatDate, formatEndDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
 import type { TemplateOptions } from './utils';
 
 interface Props { data: Partial<ResumeData>; scale?: number; options?: TemplateOptions; }
@@ -67,7 +67,7 @@ export default function MinimalTemplate({ data, scale: s = 1, options }: Props) 
                   <span style={{ color: '#6b7280', fontWeight: 300 }}> · {exp.company}</span>
                 </div>
                 <span style={{ color: accent, fontSize: `${7.5 * s}px`, flexShrink: 0, marginLeft: `${8 * s}px` }}>
-                  {formatDate(exp.startDate)} – {exp.endDate ? formatDate(exp.endDate) : 'Present'}
+                  {formatDate(exp.startDate)} – {formatEndDate(exp.endDate)}
                 </span>
               </div>
               {exp.responsibilities?.length > 0 && (

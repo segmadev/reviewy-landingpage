@@ -1,5 +1,5 @@
 import type { ResumeData } from '../../types/resume';
-import { formatDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
+import { formatDate, formatEndDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
 import type { TemplateOptions } from './utils';
 
 interface Props { data: Partial<ResumeData>; scale?: number; options?: TemplateOptions; }
@@ -125,7 +125,7 @@ export default function SidebarTemplate({ data, scale: s = 1, options }: Props) 
                       <div style={{ color: '#64748b', fontSize: `${8.5 * s}px` }}>{exp.company}</div>
                     </div>
                     <span style={{ fontSize: `${7.5 * s}px`, color: accent, flexShrink: 0, marginLeft: `${4 * s}px`, fontWeight: 600 }}>
-                      {formatDate(exp.startDate)} – {exp.endDate ? formatDate(exp.endDate) : 'Present'}
+                      {formatDate(exp.startDate)} – {formatEndDate(exp.endDate)}
                     </span>
                   </div>
                   {exp.responsibilities?.length > 0 && (

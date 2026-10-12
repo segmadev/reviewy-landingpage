@@ -1,4 +1,5 @@
 import type { WorkExperience } from '../types/resume';
+import { isOngoingEndDate } from '../utils/dateFields';
 
 const PRESENT = 'Present';
 
@@ -12,8 +13,8 @@ function hasEnteredWorkExperience(entry: WorkExperience): boolean {
   );
 }
 
-function dateOrPresent(value: string): string {
-  return value.trim() || PRESENT;
+function dateOrPresent(value: string, ongoing = false): string {
+  return !value.trim() || (ongoing && isOngoingEndDate(value)) ? PRESENT : value.trim();
 }
 
 /** Serializes every populated Work History entry for the AI suggestions API. */
@@ -23,7 +24,7 @@ export function serializeWorkExperienceForAI(entries: WorkExperience[]): string 
       position: entry.position,
       company: entry.company,
       startDate: dateOrPresent(entry.startDate),
-      endDate: dateOrPresent(entry.endDate),
+      endDate: dateOrPresent(entry.endDate, true),
       responsibilities: entry.responsibilities.filter(item => item.trim()),
     }))
   );

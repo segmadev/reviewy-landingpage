@@ -30,7 +30,8 @@ const config = { STORAGE_KEYS: { USER: 'rym_user', ACCESS_TOKEN: 'rym_access_tok
 const storage = load('src/services/builderDraftStorage.ts', { '../config/api.config': config });
 const dateFields = load('src/utils/dateFields.ts');
 const resumeUpload = load('src/services/resumeUpload.ts');
-const aiContext = load('src/services/aiSuggestionContext.ts');
+const aiContext = load('src/services/aiSuggestionContext.ts', { '../utils/dateFields': dateFields });
+const templateUtils = load('src/components/templates/utils.ts', { '../../utils/dateFields': dateFields });
 const builder = load('src/context/BuilderContext.tsx', {
   '../services/builderDraftStorage': storage,
   '../services/anonymousSession': { getAnonymousDraft: () => null, saveAnonymousDraft() {} },
@@ -122,6 +123,23 @@ test('work experience AI context contains every entered role and normalizes miss
     { position: 'Engineer', company: 'Acme', startDate: '2020-01-01', endDate: 'Present', responsibilities: ['Built APIs'] },
     { position: 'Lead', company: 'Beta', startDate: 'Present', endDate: '2025-05-01', responsibilities: ['Mentored engineers'] },
   ]);
+});
+
+test('an ongoing role keeps its explicit Present value through validation and display', () => {
+  const currentMonth = dateFields.currentMonthDate();
+
+  assert.equal(dateFields.isPresentDate('Present'), true);
+  assert.equal(dateFields.isDateFieldComplete('Present'), true);
+  assert.match(currentMonth, /^\d{4}-\d{2}-01$/);
+  assert.equal(dateFields.dateForApi('Present'), currentMonth);
+  assert.equal(dateFields.isOngoingEndDate(currentMonth), true);
+  assert.equal(templateUtils.formatDate('Present'), 'Present');
+  assert.equal(templateUtils.formatEndDate(currentMonth), 'Present');
+
+  const [role] = JSON.parse(aiContext.serializeWorkExperienceForAI([
+    { id: 'work-1', position: 'Engineer', company: 'Acme', startDate: '2024-01-01', endDate: currentMonth, responsibilities: ['Built APIs'] },
+  ]));
+  assert.equal(role.endDate, 'Present');
 });
 
 test('Finish and Review marks the resume complete without changing its builder data', () => {

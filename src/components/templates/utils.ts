@@ -1,7 +1,15 @@
+import { isOngoingEndDate, isPresentDate, PRESENT_DATE } from '../../utils/dateFields';
+
 export function formatDate(dateStr: string): string {
   if (!dateStr) return '';
+  if (isPresentDate(dateStr)) return PRESENT_DATE;
   const d = new Date(dateStr);
   return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+}
+
+/** Formats end dates while preserving the current-month-as-Present convention. */
+export function formatEndDate(dateStr: string): string {
+  return !dateStr || isOngoingEndDate(dateStr) ? PRESENT_DATE : formatDate(dateStr);
 }
 
 export interface TemplateOptions {

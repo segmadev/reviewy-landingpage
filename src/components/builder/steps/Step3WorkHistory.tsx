@@ -9,7 +9,7 @@ import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import type { WorkExperience } from '../../../types/resume';
-import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
+import { currentMonthDate, isDateFieldComplete, isOngoingEndDate, monthInputToDate } from '../../../utils/dateFields';
 import { useAIConversation } from '../../../hooks/useAIConversation';
 
 function newEntry(): WorkExperience {
@@ -198,12 +198,22 @@ export default function Step3WorkHistory() {
                 <label className="block text-xs font-medium text-gray-600 mb-1">End Date <span className="text-red-500">*</span></label>
                 <input
                   type="month"
-                  value={entry.endDate.slice(0, 7)}
+                  value={isOngoingEndDate(entry.endDate) ? '' : entry.endDate.slice(0, 7)}
                   onChange={(e) => update(entry.id, { endDate: monthInputToDate(e.target.value) })}
                   max={new Date().toISOString().slice(0, 7)}
-                  required
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm"
+                  disabled={isOngoingEndDate(entry.endDate)}
+                  required={!isOngoingEndDate(entry.endDate)}
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                 />
+                <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={isOngoingEndDate(entry.endDate)}
+                    onChange={(e) => update(entry.id, { endDate: e.target.checked ? currentMonthDate() : '' })}
+                    className="h-3.5 w-3.5 accent-primary"
+                  />
+                  Present
+                </label>
               </div>
             </div>
 
