@@ -7,15 +7,16 @@ import { useToast } from '../../../context/ToastContext';
 import { generateSummary } from '../../../services/api';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
+import { useAIConversation } from '../../../hooks/useAIConversation';
 
 export default function Step6Summary() {
   const { state, nextStep, prevStep } = useBuilder();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
+  const { conversationId, rememberConversation } = useAIConversation();
   const [summary, setSummary] = useBuilderField('professionalSummary');
   const [generating, setGenerating] = useState(false);
   const [reasoning, setReasoning] = useState('');
-  const [conversationId, setConversationId] = useState<string | undefined>();
   const abortControllerRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -98,7 +99,7 @@ export default function Step6Summary() {
       (response) => {
         setSummary(response.items[0] || '');
         setReasoning(response.reasoning);
-        setConversationId(response.conversationId);
+        rememberConversation(response.conversationId);
       }
     );
 

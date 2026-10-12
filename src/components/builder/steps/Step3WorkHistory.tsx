@@ -10,6 +10,7 @@ import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import type { WorkExperience } from '../../../types/resume';
 import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
+import { useAIConversation } from '../../../hooks/useAIConversation';
 
 function newEntry(): WorkExperience {
   return { id: Date.now().toString(), company: '', position: '', startDate: '', endDate: '', responsibilities: [''] };
@@ -20,6 +21,7 @@ export default function Step3WorkHistory() {
   const { suggestions } = useCVSuggestions();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
+  const { conversationId, rememberConversation } = useAIConversation();
   const [emptyEntries] = useState(() => [newEntry()]);
   const [entries, setEntries] = useBuilderField('workExperience', emptyEntries);
   const [aiTarget, setAiTarget] = useState<string | null>(null);
@@ -58,11 +60,12 @@ export default function Step3WorkHistory() {
     await paymentGate.gateAIFeature(
       'Key Achievements / Responsibilities',
       async () => {
-        return await getAIBulletPoints(state.jobDescription, []);
+        return await getAIBulletPoints(state.jobDescription, entries, conversationId);
       },
       10,
       (response) => {
         setAiBullets(response.items);
+        rememberConversation(response.conversationId);
       }
     );
 

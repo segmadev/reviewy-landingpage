@@ -8,16 +8,17 @@ import { getAISkillSuggestions } from '../../../services/api';
 import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
+import { useAIConversation } from '../../../hooks/useAIConversation';
 
 export default function Step5Skills() {
   const { state, nextStep, prevStep } = useBuilder();
   const { error: showError } = useToast();
   const { suggestions: cvSuggestions } = useCVSuggestions();
   const paymentGate = usePaymentGate();
+  const { conversationId, rememberConversation } = useAIConversation();
   const [skills, setSkills] = useBuilderField('skills');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [reasoning, setReasoning] = useState('');
-  const [conversationId, setConversationId] = useState<string | undefined>();
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [custom, setCustom] = useBuilderInput('skill');
 
@@ -38,7 +39,7 @@ export default function Step5Skills() {
         const newSuggestions = response.items.filter((s) => !skills.includes(s));
         setSuggestions(newSuggestions);
         setReasoning(response.reasoning);
-        setConversationId(response.conversationId);
+        rememberConversation(response.conversationId);
       }
     } catch (error) {
       if (!cancelled) {

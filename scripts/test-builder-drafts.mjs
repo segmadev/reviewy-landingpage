@@ -30,6 +30,7 @@ const config = { STORAGE_KEYS: { USER: 'rym_user', ACCESS_TOKEN: 'rym_access_tok
 const storage = load('src/services/builderDraftStorage.ts', { '../config/api.config': config });
 const dateFields = load('src/utils/dateFields.ts');
 const resumeUpload = load('src/services/resumeUpload.ts');
+const aiContext = load('src/services/aiSuggestionContext.ts');
 const builder = load('src/context/BuilderContext.tsx', {
   '../services/builderDraftStorage': storage,
   '../services/anonymousSession': { getAnonymousDraft: () => null, saveAnonymousDraft() {} },
@@ -92,6 +93,35 @@ test('assigning a server ID does not reset Work History after registration/payme
   const saved = builder.reducer(state, { type: 'SET_SUBMITTED', payload: 'paid-resume' });
   assert.equal(saved.currentStep, 3);
   assert.equal(saved.draftId, state.draftId);
+});
+
+test('the AI conversation follows the active CV across sections and restoration', () => {
+  const state = draft({ currentStep: 3 });
+  const withConversation = builder.reducer(state, {
+    type: 'SET_AI_CONVERSATION_ID',
+    payload: 'conversation-123',
+  });
+
+  storage.saveBuilderDraft('alice', withConversation);
+  const checkpoint = storage.loadBuilderDraft('alice', state.draftId);
+  const restored = builder.reducer(withConversation, { type: 'RESTORE_DRAFT', payload: checkpoint });
+
+  assert.equal(restored.aiConversationId, 'conversation-123');
+  assert.equal(builder.reducer(restored, { type: 'SET_STEP', payload: 5 }).aiConversationId, 'conversation-123');
+  assert.equal(builder.reducer(restored, { type: 'NEW_CV' }).aiConversationId, null);
+});
+
+test('work experience AI context contains every entered role and normalizes missing dates', () => {
+  const currentContent = aiContext.serializeWorkExperienceForAI([
+    { id: 'work-1', position: 'Engineer', company: 'Acme', startDate: '2020-01-01', endDate: '', responsibilities: ['Built APIs', ''] },
+    { id: 'work-2', position: 'Lead', company: 'Beta', startDate: '', endDate: '2025-05-01', responsibilities: ['Mentored engineers'] },
+    { id: 'empty', position: '', company: '', startDate: '', endDate: '', responsibilities: [''] },
+  ]);
+
+  assert.deepEqual(JSON.parse(currentContent), [
+    { position: 'Engineer', company: 'Acme', startDate: '2020-01-01', endDate: 'Present', responsibilities: ['Built APIs'] },
+    { position: 'Lead', company: 'Beta', startDate: 'Present', endDate: '2025-05-01', responsibilities: ['Mentored engineers'] },
+  ]);
 });
 
 test('Finish and Review marks the resume complete without changing its builder data', () => {

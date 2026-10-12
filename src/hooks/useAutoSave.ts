@@ -6,9 +6,17 @@ import { saveBuilderStep } from '../services/api';
 import { STORAGE_KEYS } from '../config/api.config';
 import { deleteAnonymousDraft } from '../services/anonymousSession';
 import { getStoredBuilderUserId, hasBuilderProgress, LEGACY_BUILDER_CACHE_KEY, loadBuilderDraft, saveBuilderDraft } from '../services/builderDraftStorage';
+import type { BuilderState } from '../context/BuilderContext';
 
 export const BUILDER_CACHE_KEY = LEGACY_BUILDER_CACHE_KEY;
 const inFlightSaves = new Map<string, Promise<string>>();
+
+function createAutosavePayload(state: BuilderState): Partial<BuilderState> {
+  const payload: Partial<BuilderState> = { ...state };
+  // Conversation state belongs to the local builder checkpoint, not the resume API.
+  delete payload.aiConversationId;
+  return payload;
+}
 
 export async function waitForBuilderSave(owner: string, draftId: string): Promise<string | undefined> {
   return inFlightSaves.get(`${owner}:${draftId}`);
@@ -62,7 +70,8 @@ export function useAutoSave() {
     if (!isAuthenticated || !user?.id || state.isSubmitting || state.isComplete || !hasBuilderProgress(state)) return;
     const owner = user.id;
     const key = `${owner}:${state.draftId}`;
-    const fingerprint = JSON.stringify(state);
+    const autosavePayload = createAutosavePayload(state);
+    const fingerprint = JSON.stringify(autosavePayload);
     if (saved.current.get(key) === fingerprint) return;
     let retry: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(async () => {
@@ -71,7 +80,7 @@ export function useAutoSave() {
       running.current = true;
       setSaveStatus('saving');
       try {
-        const request = saveBuilderStep(state.submittedCvId || serverIds.current.get(key) || '', state);
+        const request = saveBuilderStep(state.submittedCvId || serverIds.current.get(key) || '', autosavePayload);
         inFlightSaves.set(key, request);
         const id = await request;
         serverIds.current.set(key, id);

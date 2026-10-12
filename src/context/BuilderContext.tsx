@@ -28,6 +28,7 @@ export interface BuilderState extends ResumeData {
   isSubmitting: boolean;
   isComplete: boolean;
   submittedCvId: string | null;
+  aiConversationId: string | null;
 }
 
 const initialState: BuilderState = {
@@ -47,6 +48,7 @@ const initialState: BuilderState = {
   isSubmitting: false,
   isComplete: false,
   submittedCvId: null,
+  aiConversationId: null,
   // Resume fields — start blank; populated as user progresses
   contactDetails: { fullName: '', address: '', city: '', postcode: '', phone: '', email: '', country: 'GB' },
   linkedinProfile: '',
@@ -149,6 +151,7 @@ type Action =
   | { type: 'SET_SUBMITTING'; payload: boolean }
   | { type: 'SET_SUBMITTED'; payload: string }
   | { type: 'MARK_COMPLETE'; payload: string }
+  | { type: 'SET_AI_CONVERSATION_ID'; payload: string }
   | { type: 'AUTOFILL'; payload: ExtractionResult }
   | { type: 'LOAD_CV'; payload: SavedCV }
   | { type: 'RESTORE_DRAFT'; payload: BuilderState }
@@ -191,6 +194,7 @@ function reducer(state: BuilderState, action: Action): BuilderState {
     case 'SET_SUBMITTING': return { ...state, isSubmitting: action.payload };
     case 'SET_SUBMITTED': return { ...state, submittedCvId: action.payload, isSubmitting: false };
     case 'MARK_COMPLETE': return { ...state, submittedCvId: action.payload, isSubmitting: false, isComplete: true };
+    case 'SET_AI_CONVERSATION_ID': return { ...state, aiConversationId: action.payload };
     case 'AUTOFILL': {
       const p = action.payload;
       const contact = {

@@ -5,11 +5,12 @@
  * The http-client handles auth tokens, token refresh, and error handling.
  */
 
-import type { AuthResponse, ResumeData, SavedCV, User } from '../types/resume';
+import type { AuthResponse, ResumeData, SavedCV, User, WorkExperience } from '../types/resume';
 import { http, HttpError } from './http-client';
 import { ENDPOINTS } from '../config/api.config';
 import { normalizeUploadedResume } from './resumeUpload';
 import { getApiErrorMessage, getSignupErrorMessage } from './apiErrorMessages';
+import { serializeWorkExperienceForAI } from './aiSuggestionContext';
 
 // Custom error for when resume is not found on backend
 export class ResumeNotFoundError extends Error {
@@ -85,20 +86,24 @@ export async function logoutUser(): Promise<void> {
 
 // ─── CV Builder ──────────────────────────────────────────────────────────────
 
-export async function saveBuilderStep(resumeId: string, data: Partial<ResumeData>): Promise<string> {
+type BuilderStepPayload = Partial<ResumeData> & { aiConversationId?: string | null };
+
+export async function saveBuilderStep(resumeId: string, data: BuilderStepPayload): Promise<string> {
   try {
     console.log(`[API] saveBuilderStep called with resumeId: "${resumeId}"`);
+    const resumeData = { ...data };
+    delete resumeData.aiConversationId;
 
     if (!resumeId) {
       // Create new resume
       console.log('[API] No resumeId in saveBuilderStep, creating new resume');
-      const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...data, isDraft: true })) as { id: string };
+      const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...resumeData, isDraft: true })) as { id: string };
       console.log(`[API] saveBuilderStep created new resume with ID: ${response.id}`);
       return response.id;
     } else {
       // Update existing resume
       console.log(`[API] Updating existing resume ${resumeId} in saveBuilderStep`);
-      await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), { ...data, isDraft: true });
+      await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), { ...resumeData, isDraft: true });
       console.log(`[API] saveBuilderStep updated resume ${resumeId} successfully`);
       return resumeId;
     }
@@ -287,12 +292,12 @@ export async function requestAISuggestions(
 
 export async function getAIBulletPoints(
   jobDescription: string,
-  currentBullets: string[],
+  workExperience: WorkExperience[],
   conversationId?: string
 ): Promise<{ items: string[]; conversationId: string; reasoning: string }> {
   return requestAISuggestions({
     fieldName: 'workExperience',
-    currentContent: JSON.stringify(currentBullets),
+    currentContent: serializeWorkExperienceForAI(workExperience),
     jobDescription,
     conversationId,
   });
