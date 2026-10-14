@@ -9,9 +9,11 @@ import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import { useAIConversation } from '../../../hooks/useAIConversation';
+import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
 
 export default function Step5Skills() {
-  const { state, nextStep, prevStep } = useBuilder();
+  const { state, prevStep } = useBuilder();
+  const { saveAndContinue, isSaving } = useSaveAndContinue();
   const { error: showError } = useToast();
   const { suggestions: cvSuggestions } = useCVSuggestions();
   const paymentGate = usePaymentGate();
@@ -74,7 +76,7 @@ export default function Step5Skills() {
   };
 
   const handleNext = () => {
-    nextStep();
+    void saveAndContinue();
   };
 
   return (
@@ -208,7 +210,7 @@ export default function Step5Skills() {
         <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">
           ← Previous
         </Button>
-        <Button size="lg" onClick={handleNext} disabled={skills.length === 0} className="w-full lg:w-auto">
+        <Button size="lg" onClick={handleNext} loading={isSaving} disabled={skills.length === 0} className="w-full lg:w-auto">
           Save & Continue →
         </Button>
       </div>

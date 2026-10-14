@@ -6,9 +6,11 @@ import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { getUserProfile } from '../../../services/api';
 import type { ContactDetails } from '../../../types/resume';
+import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
 
 export default function Step2Contact() {
-  const { nextStep, prevStep } = useBuilder();
+  const { prevStep } = useBuilder();
+  const { saveAndContinue, isSaving } = useSaveAndContinue();
   const { user } = useAuth();
   const { error: showError } = useToast();
   const [contact, setContact] = useBuilderField('contactDetails');
@@ -41,7 +43,7 @@ export default function Step2Contact() {
       return;
     }
 
-    nextStep();
+    void saveAndContinue();
   };
 
   const field = (
@@ -175,7 +177,7 @@ export default function Step2Contact() {
         <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">
           ← Previous
         </Button>
-        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">
+        <Button size="lg" onClick={handleNext} loading={isSaving} className="w-full lg:w-auto">
           Save & Continue →
         </Button>
       </div>

@@ -1,14 +1,16 @@
 import { motion } from 'framer-motion';
 import { useBuilder } from '../../../context/BuilderContext';
+import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
 
 // ── Step 1 ───────────────────────────────────────────────────────────────────
 export default function Step1JobTargeting() {
-  const { state, dispatch, nextStep } = useBuilder();
+  const { state, dispatch } = useBuilder();
+  const { saveAndContinue, isSaving } = useSaveAndContinue();
   const value = state.jobDescription || '';
 
   const handleNext = () => {
     if (!value || value.trim().length === 0) return;
-    nextStep();
+    void saveAndContinue();
   };
 
   const isValid = value && value.trim().length > 0;
@@ -54,7 +56,7 @@ export default function Step1JobTargeting() {
       <div className="mt-6 pb-6 lg:pb-0">
         <button
           onClick={handleNext}
-          disabled={!isValid}
+          disabled={!isValid || isSaving}
           title={!isValid ? 'Please enter a job description to continue' : ''}
           className={`w-full lg:w-auto px-7 py-3 rounded-xl border-2 font-semibold text-sm transition-all ${
             isValid
@@ -62,7 +64,7 @@ export default function Step1JobTargeting() {
               : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed'
           }`}
         >
-          Target the Job →
+          {isSaving ? 'Saving…' : 'Save & Continue →'}
         </button>
       </div>
     </motion.div>

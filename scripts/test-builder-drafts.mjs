@@ -96,6 +96,36 @@ test('assigning a server ID does not reset Work History after registration/payme
   assert.equal(saved.draftId, state.draftId);
 });
 
+test('Save & Continue coalesces duplicate clicks into one backend request', async () => {
+  let calls = 0;
+  let finishSave;
+  const pendingSave = new Promise(resolve => { finishSave = resolve; });
+  const saves = load('src/hooks/useAutoSave.ts', {
+    react: { useEffect() {}, useRef: value => ({ current: value }) },
+    '../context/BuilderContext': {},
+    '../context/AuthContext': {},
+    '../services/api': {
+      saveBuilderStep: async () => {
+        calls += 1;
+        await pendingSave;
+        return 'resume-1';
+      },
+    },
+    '../config/api.config': config,
+    '../services/anonymousSession': {},
+    '../services/builderDraftStorage': storage,
+  });
+  const state = draft({ currentStep: 2 });
+
+  const first = saves.saveBuilderOnContinue('alice', state);
+  const duplicate = saves.saveBuilderOnContinue('alice', state);
+  assert.equal(first, duplicate);
+  assert.equal(calls, 1);
+
+  finishSave();
+  assert.equal(await first, 'resume-1');
+});
+
 test('the AI conversation follows the active CV across sections and restoration', () => {
   const state = draft({ currentStep: 3 });
   const withConversation = builder.reducer(state, {

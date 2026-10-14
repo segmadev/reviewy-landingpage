@@ -8,9 +8,11 @@ import { generateSummary } from '../../../services/api';
 import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import { useAIConversation } from '../../../hooks/useAIConversation';
+import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
 
 export default function Step6Summary() {
-  const { state, nextStep, prevStep } = useBuilder();
+  const { state, prevStep } = useBuilder();
+  const { saveAndContinue, isSaving } = useSaveAndContinue();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
   const { conversationId, rememberConversation } = useAIConversation();
@@ -112,7 +114,7 @@ export default function Step6Summary() {
   };
 
   const handleNext = () => {
-    nextStep();
+    void saveAndContinue();
   };
 
   const wordCount = summary.trim().split(/\s+/).filter(Boolean).length;
@@ -246,6 +248,7 @@ export default function Step6Summary() {
         <Button
           size="lg"
           onClick={handleNext}
+          loading={isSaving}
           disabled={hasPlaceholders}
           title={hasPlaceholders ? 'Replace all [X] placeholders before continuing' : ''}
           className={`w-full lg:w-auto ${hasPlaceholders ? 'opacity-50 cursor-not-allowed' : ''}`}

@@ -7,6 +7,7 @@ import { useCVSuggestions } from '../../../hooks/useCVSuggestions';
 import { useToast } from '../../../context/ToastContext';
 import type { Education } from '../../../types/resume';
 import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
+import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
 
 const levels = ['Bachelors', 'Masters', 'Doctoral', 'HND / Diploma', 'A-Levels', 'Other'];
 
@@ -15,7 +16,8 @@ function newEntry(): Education {
 }
 
 export default function Step4Education() {
-  const { nextStep, prevStep } = useBuilder();
+  const { prevStep } = useBuilder();
+  const { saveAndContinue, isSaving } = useSaveAndContinue();
   const { suggestions } = useCVSuggestions();
   const { error: showError } = useToast();
   const [emptyEntries] = useState(() => [newEntry()]);
@@ -36,7 +38,7 @@ export default function Step4Education() {
       return;
     }
 
-    nextStep();
+    void saveAndContinue();
   };
 
   return (
@@ -181,7 +183,7 @@ export default function Step4Education() {
 
       <div className="flex justify-between mt-8 pb-6 lg:pb-0 gap-3">
         <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
-        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">Save & Continue →</Button>
+        <Button size="lg" onClick={handleNext} loading={isSaving} className="w-full lg:w-auto">Save & Continue →</Button>
       </div>
     </motion.div>
   );

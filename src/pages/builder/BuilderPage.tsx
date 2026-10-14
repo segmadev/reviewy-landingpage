@@ -107,8 +107,8 @@ function BuilderInner() {
   const [isConvertingResume, setIsConvertingResume] = useState(false);
 
   // Route-backed edits prefer the matching local checkpoint, then fall back to the backend.
-  // This effect intentionally does not depend on submittedCvId: autosave assigning the first
-  // backend id must never reload the form or move the user back to another step.
+  // This effect intentionally does not depend on submittedCvId: Save & Continue assigning the
+  // first backend id must never reload the form or move the user back to another step.
   useEffect(() => {
     if (!id) return;
 
@@ -184,8 +184,8 @@ function BuilderInner() {
     dispatch({ type: 'SET_SUBMITTING', payload: true });
     try {
       // state.submittedCvId is the authoritative id for the resume currently loaded
-      // (set by LOAD_CV when opening an existing one, or by auto-save once it creates
-      // one) — it must take priority over the auto-save localStorage slot, which can
+      // (set by LOAD_CV when opening an existing one, or by Save & Continue once it
+      // creates one) — it must take priority over the localStorage checkpoint, which can
       // go stale after switching between CVs and would otherwise target the wrong
       // resume here.
       const pendingId = user?.id ? await waitForBuilderSave(user.id, state.draftId) : undefined;

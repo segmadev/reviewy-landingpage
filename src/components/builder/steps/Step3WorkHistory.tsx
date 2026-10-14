@@ -11,13 +11,15 @@ import PaymentModal from '../../PaymentModal';
 import type { WorkExperience } from '../../../types/resume';
 import { currentMonthDate, isDateFieldComplete, isOngoingEndDate, monthInputToDate } from '../../../utils/dateFields';
 import { useAIConversation } from '../../../hooks/useAIConversation';
+import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
 
 function newEntry(): WorkExperience {
   return { id: Date.now().toString(), company: '', position: '', startDate: '', endDate: '', responsibilities: [''] };
 }
 
 export default function Step3WorkHistory() {
-  const { state, nextStep, prevStep } = useBuilder();
+  const { state, prevStep } = useBuilder();
+  const { saveAndContinue, isSaving } = useSaveAndContinue();
   const { suggestions } = useCVSuggestions();
   const { error: showError } = useToast();
   const paymentGate = usePaymentGate();
@@ -107,7 +109,7 @@ export default function Step3WorkHistory() {
     }
 
     // Drafts retain partially entered positions, even when they are not ready for export.
-    nextStep();
+    void saveAndContinue();
   };
 
   return (
@@ -373,7 +375,7 @@ export default function Step3WorkHistory() {
 
       <div className="flex justify-between mt-8 pb-6 lg:pb-0 gap-3">
         <Button variant="outline" size="md" onClick={prevStep} className="hidden lg:inline-flex">← Previous</Button>
-        <Button size="lg" onClick={handleNext} className="w-full lg:w-auto">Save & Continue →</Button>
+        <Button size="lg" onClick={handleNext} loading={isSaving} className="w-full lg:w-auto">Save & Continue →</Button>
       </div>
 
       <PaymentModal
