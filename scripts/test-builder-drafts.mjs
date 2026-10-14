@@ -29,12 +29,14 @@ function load(file, mocks = {}, extra = '') {
 const config = { STORAGE_KEYS: { USER: 'rym_user', ACCESS_TOKEN: 'rym_access_token', REFRESH_TOKEN: 'rym_refresh_token' } };
 const storage = load('src/services/builderDraftStorage.ts', { '../config/api.config': config });
 const dateFields = load('src/utils/dateFields.ts');
+const entityIds = load('src/utils/entityIds.ts');
 const resumeUpload = load('src/services/resumeUpload.ts');
 const aiContext = load('src/services/aiSuggestionContext.ts', { '../utils/dateFields': dateFields });
 const templateUtils = load('src/components/templates/utils.ts', { '../../utils/dateFields': dateFields });
 const builder = load('src/context/BuilderContext.tsx', {
   '../services/builderDraftStorage': storage,
   '../services/anonymousSession': { getAnonymousDraft: () => null, saveAnonymousDraft() {} },
+  '../utils/entityIds': entityIds,
 }, '\nexport { reducer, hydrateBuilderState, inferResumeStep };');
 beforeEach(() => values.clear());
 const draft = (patch = {}) => builder.hydrateBuilderState({ jobDescription: 'Engineer', ...patch });
@@ -47,6 +49,22 @@ test('all fields and the exact section round-trip, including an incomplete work 
   storage.saveBuilderDraft('alice', state);
   assert.deepEqual(storage.loadBuilderDraft('alice'), state);
   assert.equal(storage.loadBuilderDraft('bob'), null);
+});
+test('draft hydration repairs missing and duplicate row IDs', () => {
+  const state = builder.hydrateBuilderState({
+    certifications: [
+      { id: 'same-id', title: 'First', issuer: 'One', date: '2026-01-01' },
+      { id: 'same-id', title: 'Second', issuer: 'Two', date: '2026-02-01' },
+      { title: 'Third', issuer: 'Three', date: '2026-03-01' },
+    ],
+    references: [{ id: '', name: 'Ref', position: '', company: '', contact: '' }],
+  });
+
+  const certificationIds = state.certifications.map(certification => certification.id);
+  assert.equal(certificationIds[0], 'same-id');
+  assert.equal(new Set(certificationIds).size, 3);
+  assert.ok(certificationIds.every(Boolean));
+  assert.ok(state.references[0].id);
 });
 test('new CVs have separate identities and do not overwrite earlier checkpoints', () => {
   const first = draft({ currentStep: 3, submittedCvId: 'server-1' });

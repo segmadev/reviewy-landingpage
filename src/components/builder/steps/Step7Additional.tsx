@@ -7,6 +7,7 @@ import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import type { Certification, Reference } from '../../../types/resume';
 import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
+import { createEntityId } from '../../../utils/entityIds';
 
 export interface AdditionalInfoSubmission {
   languages: string[];
@@ -21,10 +22,18 @@ interface Step7AdditionalProps {
 }
 
 function newCert(): Certification {
-  return { id: Date.now().toString(), title: '', issuer: '', date: '' };
+  return { id: createEntityId(), title: '', issuer: '', date: '' };
 }
 function newRef(): Reference {
-  return { id: Date.now().toString(), name: '', position: '', company: '', contact: '' };
+  return { id: createEntityId(), name: '', position: '', company: '', contact: '' };
+}
+
+function updateItemById<T extends { id: string }>(items: T[], id: string, patch: Partial<T>): T[] {
+  return items.map(item => item.id === id ? { ...item, ...patch } : item);
+}
+
+function removeItemById<T extends { id: string }>(items: T[], id: string): T[] {
+  return items.filter(item => item.id !== id);
 }
 
 export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
@@ -146,18 +155,18 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
                         {certs.map((cert) => (
                           <div key={cert.id} className="grid grid-cols-2 gap-2 p-2 bg-white rounded-lg border border-gray-100">
                             <input type="text" placeholder="Certification title" value={cert.title}
-                              onChange={(e) => setCerts(certs.map(c => c.id === cert.id ? { ...c, title: e.target.value } : c))}
+                              onChange={(e) => setCerts(current => updateItemById(current, cert.id, { title: e.target.value }))}
                               className="col-span-2 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                             <input type="text" placeholder="Issuing body" value={cert.issuer}
-                              onChange={(e) => setCerts(certs.map(c => c.id === cert.id ? { ...c, issuer: e.target.value } : c))}
+                              onChange={(e) => setCerts(current => updateItemById(current, cert.id, { issuer: e.target.value }))}
                               className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                             <div className="flex gap-1">
                               <input type="month" value={cert.date.slice(0,7)}
-                                onChange={(e) => setCerts(certs.map(c => c.id === cert.id ? { ...c, date: monthInputToDate(e.target.value) } : c))}
+                                onChange={(e) => setCerts(current => updateItemById(current, cert.id, { date: monthInputToDate(e.target.value) }))}
                                 required
                                 className="flex-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                               <button
-                                onClick={() => setCerts(certs.filter(c => c.id !== cert.id))}
+                                onClick={() => setCerts(current => removeItemById(current, cert.id))}
                                 className="px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Delete certification"
                               >
@@ -166,7 +175,7 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
                             </div>
                           </div>
                         ))}
-                        <button onClick={() => setCerts([...certs, newCert()])}
+                        <button onClick={() => setCerts(current => [...current, newCert()])}
                           className="flex items-center gap-1 text-xs text-primary hover:underline">
                           <Plus className="w-3 h-3" /> Add certification
                         </button>
@@ -198,10 +207,10 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
                           <div key={ref.id} className="p-2 bg-white rounded-lg border border-gray-100 space-y-2">
                             <div className="flex justify-between items-start gap-2">
                               <input type="text" placeholder="Full name" value={ref.name}
-                                onChange={(e) => setRefs(refs.map(r => r.id === ref.id ? { ...r, name: e.target.value } : r))}
+                                onChange={(e) => setRefs(current => updateItemById(current, ref.id, { name: e.target.value }))}
                                 className="flex-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                               <button
-                                onClick={() => setRefs(refs.filter(r => r.id !== ref.id))}
+                                onClick={() => setRefs(current => removeItemById(current, ref.id))}
                                 className="px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                                 title="Delete reference"
                               >
@@ -210,18 +219,18 @@ export default function Step7Additional({ onFinish }: Step7AdditionalProps) {
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <input type="text" placeholder="Position" value={ref.position}
-                                onChange={(e) => setRefs(refs.map(r => r.id === ref.id ? { ...r, position: e.target.value } : r))}
+                                onChange={(e) => setRefs(current => updateItemById(current, ref.id, { position: e.target.value }))}
                                 className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                               <input type="text" placeholder="Company" value={ref.company}
-                                onChange={(e) => setRefs(refs.map(r => r.id === ref.id ? { ...r, company: e.target.value } : r))}
+                                onChange={(e) => setRefs(current => updateItemById(current, ref.id, { company: e.target.value }))}
                                 className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                             </div>
                             <input type="email" placeholder="Contact email" value={ref.contact}
-                              onChange={(e) => setRefs(refs.map(r => r.id === ref.id ? { ...r, contact: e.target.value } : r))}
+                              onChange={(e) => setRefs(current => updateItemById(current, ref.id, { contact: e.target.value }))}
                               className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-primary focus:outline-none text-xs" />
                           </div>
                         ))}
-                        <button onClick={() => setRefs([...refs, newRef()])}
+                        <button onClick={() => setRefs(current => [...current, newRef()])}
                           className="flex items-center gap-1 text-xs text-primary hover:underline">
                           <Plus className="w-3 h-3" /> Add reference
                         </button>

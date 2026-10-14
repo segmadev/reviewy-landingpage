@@ -8,11 +8,12 @@ import { useToast } from '../../../context/ToastContext';
 import type { Education } from '../../../types/resume';
 import { isDateFieldComplete, monthInputToDate } from '../../../utils/dateFields';
 import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
+import { createEntityId } from '../../../utils/entityIds';
 
 const levels = ['Bachelors', 'Masters', 'Doctoral', 'HND / Diploma', 'A-Levels', 'Other'];
 
 function newEntry(): Education {
-  return { id: Date.now().toString(), institution: '', degree: '', startDate: '', endDate: '' };
+  return { id: createEntityId(), institution: '', degree: '', startDate: '', endDate: '' };
 }
 
 export default function Step4Education() {
@@ -157,7 +158,7 @@ export default function Step4Education() {
                 key={idx}
                 onClick={() => {
                   setEntries((prev) => [...prev, {
-                    id: Date.now().toString() + idx,
+                    id: createEntityId(),
                     institution: edu.institution,
                     degree: edu.degree,
                     startDate: edu.startDate,

@@ -12,9 +12,10 @@ import type { WorkExperience } from '../../../types/resume';
 import { isDateFieldComplete, isPresentDate, monthInputToDate, PRESENT_DATE } from '../../../utils/dateFields';
 import { useAIConversation } from '../../../hooks/useAIConversation';
 import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
+import { createEntityId } from '../../../utils/entityIds';
 
 function newEntry(): WorkExperience {
-  return { id: Date.now().toString(), company: '', position: '', startDate: '', endDate: '', responsibilities: [''] };
+  return { id: createEntityId(), company: '', position: '', startDate: '', endDate: '', responsibilities: [''] };
 }
 
 export default function Step3WorkHistory() {
@@ -348,7 +349,7 @@ export default function Step3WorkHistory() {
                 key={idx}
                 onClick={() => {
                   setEntries((prev) => [...prev, {
-                    id: Date.now().toString() + idx,
+                    id: createEntityId(),
                     position: exp.position,
                     company: exp.company,
                     startDate: exp.startDate,

@@ -10,6 +10,7 @@ import {
   hasBuilderProgress,
 } from '../services/builderDraftStorage';
 import { getAnonymousDraft, saveAnonymousDraft } from '../services/anonymousSession';
+import { ensureUniqueEntityIds } from '../utils/entityIds';
 
 export interface BuilderState extends ResumeData {
   draftId: string;
@@ -82,6 +83,10 @@ function hydrateBuilderState(draft: Partial<BuilderState>): BuilderState {
     toggles: { ...initialState.toggles, ...draft.toggles },
     templateCustomizations: draft.templateCustomizations || {},
     portfolioLinks: draft.portfolioLinks || ['', ''],
+    workExperience: ensureUniqueEntityIds(draft.workExperience || []),
+    education: ensureUniqueEntityIds(draft.education || []),
+    certifications: ensureUniqueEntityIds(draft.certifications || []),
+    references: ensureUniqueEntityIds(draft.references || []),
     isSubmitting: false,
   };
 }
@@ -234,11 +239,11 @@ function reducer(state: BuilderState, action: Action): BuilderState {
         portfolioLinks: cv.portfolioLinks || [],
         professionalSummary: cv.professionalSummary || '',
         skills: cv.skills || [],
-        workExperience: cv.workExperience || [],
-        education: cv.education || [],
+        workExperience: ensureUniqueEntityIds(cv.workExperience || []),
+        education: ensureUniqueEntityIds(cv.education || []),
         relevantCourseWork: cv.relevantCourseWork || '',
-        certifications: cv.certifications || [],
-        references: cv.references || [],
+        certifications: ensureUniqueEntityIds(cv.certifications || []),
+        references: ensureUniqueEntityIds(cv.references || []),
         languages: cv.languages || [],
         awards: cv.awards || [],
         hobbies: cv.hobbies || [],
