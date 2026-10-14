@@ -150,26 +150,67 @@ test('work experience AI context contains every entered role and normalizes miss
   ]);
 
   assert.deepEqual(JSON.parse(currentContent), [
-    { position: 'Engineer', company: 'Acme', startDate: '2020-01-01', endDate: 'Present', responsibilities: ['Built APIs'] },
-    { position: 'Lead', company: 'Beta', startDate: 'Present', endDate: '2025-05-01', responsibilities: ['Mentored engineers'] },
+    { position: 'Engineer', company: 'Acme', startDate: '2020-01-01', endDate: 'present', responsibilities: ['Built APIs'] },
+    { position: 'Lead', company: 'Beta', startDate: 'present', endDate: '2025-05-01', responsibilities: ['Mentored engineers'] },
   ]);
 });
 
 test('an ongoing role keeps its explicit Present value through validation and display', () => {
-  const currentMonth = dateFields.currentMonthDate();
-
   assert.equal(dateFields.isPresentDate('Present'), true);
   assert.equal(dateFields.isDateFieldComplete('Present'), true);
-  assert.match(currentMonth, /^\d{4}-\d{2}-01$/);
-  assert.equal(dateFields.dateForApi('Present'), currentMonth);
-  assert.equal(dateFields.isOngoingEndDate(currentMonth), true);
   assert.equal(templateUtils.formatDate('Present'), 'Present');
-  assert.equal(templateUtils.formatEndDate(currentMonth), 'Present');
+  assert.equal(templateUtils.formatEndDate('Present'), 'Present');
+
+  const [role] = JSON.parse(aiContext.serializeWorkExperienceForAI([
+    { id: 'work-1', position: 'Engineer', company: 'Acme', startDate: '2024-01-01', endDate: 'Present', responsibilities: ['Built APIs'] },
+  ]));
+  assert.equal(role.endDate, 'present');
+});
+
+test('a real current-month end date remains a completed date', () => {
+  const currentMonth = `${new Date().toISOString().slice(0, 7)}-01`;
+  assert.notEqual(templateUtils.formatEndDate(currentMonth), 'Present');
 
   const [role] = JSON.parse(aiContext.serializeWorkExperienceForAI([
     { id: 'work-1', position: 'Engineer', company: 'Acme', startDate: '2024-01-01', endDate: currentMonth, responsibilities: ['Built APIs'] },
   ]));
-  assert.equal(role.endDate, 'Present');
+  assert.equal(role.endDate, currentMonth);
+});
+
+test('Save & Continue sends the lowercase present end date required by the API', async () => {
+  let requestBody;
+  class TestHttpError extends Error {}
+  const api = load('src/services/api.ts', {
+    './http-client': {
+      HttpError: TestHttpError,
+      http: {
+        patch: async (_path, body) => { requestBody = body; },
+      },
+    },
+    '../config/api.config': {
+      ENDPOINTS: { UPDATE_RESUME: id => `/resume/resumes/${id}` },
+    },
+    './resumeUpload': {},
+    './apiErrorMessages': {},
+    './aiSuggestionContext': aiContext,
+    '../utils/dateFields': dateFields,
+  });
+
+  await api.saveBuilderStep('resume-1', {
+    workExperience: [
+      { id: 'work-1', position: 'Engineer', company: 'Acme', startDate: '2024-01-01', endDate: 'Present', responsibilities: ['Built APIs'] },
+    ],
+  });
+
+  assert.equal(requestBody.workExperience[0].endDate, 'present');
+
+  const payloadWithoutWorkHistory = {
+    professionalSummary: 'Existing summary',
+    aiConversationId: 'conversation-1',
+  };
+  await api.saveBuilderStep('resume-1', payloadWithoutWorkHistory);
+  assert.equal(payloadWithoutWorkHistory.aiConversationId, 'conversation-1');
+  assert.equal(requestBody.aiConversationId, undefined);
 });
 
 test('Finish and Review marks the resume complete without changing its builder data', () => {

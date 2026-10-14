@@ -11,7 +11,7 @@ import { ENDPOINTS } from '../config/api.config';
 import { normalizeUploadedResume } from './resumeUpload';
 import { getApiErrorMessage, getSignupErrorMessage } from './apiErrorMessages';
 import { serializeWorkExperienceForAI } from './aiSuggestionContext';
-import { dateForApi } from '../utils/dateFields';
+import { isPresentDate, PRESENT_DATE } from '../utils/dateFields';
 
 // Custom error for when resume is not found on backend
 export class ResumeNotFoundError extends Error {
@@ -89,28 +89,21 @@ export async function logoutUser(): Promise<void> {
 
 type BuilderStepPayload = Partial<ResumeData> & { aiConversationId?: string | null };
 
-function normalizeResumeDatesForApi<T extends BuilderStepPayload>(data: T): T {
+function normalizePresentEndDates<T extends BuilderStepPayload>(data: T): T {
+  if (!data.workExperience) return { ...data };
   return {
     ...data,
-    ...(data.workExperience ? {
-      workExperience: data.workExperience.map(entry => ({
-        ...entry,
-        endDate: dateForApi(entry.endDate),
-      })),
-    } : {}),
-    ...(data.education ? {
-      education: data.education.map(entry => ({
-        ...entry,
-        endDate: dateForApi(entry.endDate),
-      })),
-    } : {}),
+    workExperience: data.workExperience.map(entry => ({
+      ...entry,
+      endDate: isPresentDate(entry.endDate) ? PRESENT_DATE : entry.endDate,
+    })),
   } as T;
 }
 
 export async function saveBuilderStep(resumeId: string, data: BuilderStepPayload): Promise<string> {
   try {
     console.log(`[API] saveBuilderStep called with resumeId: "${resumeId}"`);
-    const resumeData = normalizeResumeDatesForApi(data);
+    const resumeData = normalizePresentEndDates(data);
     delete resumeData.aiConversationId;
 
     if (!resumeId) {
@@ -155,7 +148,7 @@ export async function convertResumeToNew(data: ResumeData): Promise<{ cvId: stri
       hobbies: data.hobbies || [],
     };
 
-    const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...normalizeResumeDatesForApi(cleanData), isDraft: false })) as { id: string };
+    const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...normalizePresentEndDates(cleanData), isDraft: false })) as { id: string };
     console.log(`[API] Resume converted to new with ID: ${response.id}`);
     return { cvId: response.id };
   } catch (error) {
@@ -192,14 +185,14 @@ export async function submitCV(resumeId: string, data: ResumeData): Promise<{ cv
     if (!resumeId || resumeId.trim() === '') {
       // Create new resume
       console.log('[API] No resumeId provided, creating new resume via POST');
-      const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...normalizeResumeDatesForApi(cleanData), isDraft: false })) as { id: string };
+      const response = (await http.post(ENDPOINTS.CREATE_RESUME, { ...normalizePresentEndDates(cleanData), isDraft: false })) as { id: string };
       console.log(`[API] New resume created with ID: ${response.id}`);
       return { cvId: response.id };
     } else {
       // Try to update existing resume
       console.log(`[API] Attempting to update resume ${resumeId} via PATCH`);
       try {
-        await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), { ...normalizeResumeDatesForApi(cleanData), isDraft: false });
+        await http.patch(ENDPOINTS.UPDATE_RESUME(resumeId), { ...normalizePresentEndDates(cleanData), isDraft: false });
         console.log(`[API] Resume ${resumeId} updated successfully`);
         return { cvId: resumeId };
       } catch (error) {
