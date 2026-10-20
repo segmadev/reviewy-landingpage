@@ -27,6 +27,12 @@ interface TokenResponse {
   user?: unknown;
 }
 
+export const SESSION_EXPIRED_EVENT = 'reviewyme:session-expired';
+
+function notifySessionExpired(): void {
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+}
+
 // Token management
 const getStoredToken = (type: 'access' | 'refresh'): string | null => {
   const key = type === 'access' ? STORAGE_KEYS.ACCESS_TOKEN : STORAGE_KEYS.REFRESH_TOKEN;
@@ -80,6 +86,7 @@ async function refreshAccessToken(): Promise<boolean> {
     const refreshToken = getStoredToken('refresh');
     if (!refreshToken) {
       clearTokens();
+      notifySessionExpired();
       return false;
     }
 
@@ -107,10 +114,12 @@ async function refreshAccessToken(): Promise<boolean> {
     }
 
     clearTokens();
+    notifySessionExpired();
     return false;
   } catch (error) {
     console.error('Token refresh failed:', error);
     clearTokens();
+    notifySessionExpired();
     return false;
   } finally {
     isRefreshing = false;
@@ -125,6 +134,7 @@ export async function httpClient(
 ): Promise<unknown> {
   const { method = 'GET', headers = {}, body, signal } = config;
   const url = `${API_CONFIG.GATEWAY_URL}${endpoint}`;
+  const authGenerationAtRequestStart = authStorageGeneration;
   const isMultipart = typeof FormData !== 'undefined' && body instanceof FormData;
 
   // Let the browser generate the multipart boundary for FormData requests.
@@ -158,7 +168,13 @@ export async function httpClient(
     let response = await fetch(url, fetchOptions);
 
     // Handle 401 - token expired, try refresh
-    if (response.status === 401) {
+    if (response.status === 401 && accessToken) {
+      // An explicit logout may finish while this request is still in flight.
+      // Do not turn that expected 401 into a session-expired prompt.
+      if (authGenerationAtRequestStart !== authStorageGeneration) {
+        throw new HttpError(401, null, 'Unauthorized');
+      }
+
       const refreshed = await refreshAccessToken();
       if (refreshed) {
         // Retry request with new token
@@ -166,9 +182,7 @@ export async function httpClient(
         finalHeaders.Authorization = `Bearer ${newToken}`;
         response = await fetch(url, { ...fetchOptions, headers: finalHeaders });
       } else {
-        // Refresh failed - clear auth and throw error (don't redirect)
-        // Let the component handle showing login modal
-        clearTokens();
+        // The refresh owner clears credentials and emits one global prompt.
         console.warn('[HTTP] Token refresh failed, throwing UnauthorizedError');
         throw new HttpError(401, null, 'Session expired. Please login again.');
       }

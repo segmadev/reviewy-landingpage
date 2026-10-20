@@ -68,6 +68,7 @@ export async function loginJobSeeker(email: string, password: string): Promise<A
     };
     return {
       token: response.accessToken,
+      refreshToken: response.refreshToken,
       user: response.user,
     };
   } catch (error) {

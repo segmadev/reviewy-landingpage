@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { User } from '../types/resume';
 import { STORAGE_KEYS } from '../config/api.config';
-import { tokenManager, http } from '../services/http-client';
+import { tokenManager, http, SESSION_EXPIRED_EVENT } from '../services/http-client';
 import { getUserProfile } from '../services/api';
 import { clearSignedInUserStorage } from '../services/userSessionStorage';
 
@@ -14,6 +14,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
+  isSessionExpired: boolean;
   login: (accessToken: string, refreshToken: string, user?: User) => void;
   logout: () => Promise<void>;
   fetchProfile: (token?: string) => Promise<void>;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const sessionGeneration = useRef(0);
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
   const [state, setState] = useState<AuthState>(() => {
     // Restore session from localStorage if present
     const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((accessToken: string, refreshToken: string, user?: User) => {
     // Store tokens even if user is missing - we'll fetch it separately
     if (accessToken && refreshToken) {
+      setIsSessionExpired(false);
       sessionGeneration.current += 1;
       console.log('[AuthContext] Storing tokens:');
       console.log('  - accessToken:', accessToken.substring(0, 50) + '...');
@@ -96,6 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasRefresh: !!refreshToken,
       });
     }
+  }, []);
+
+  useEffect(() => {
+    const handleSessionExpired = () => setIsSessionExpired(true);
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, []);
 
   const fetchProfile = useCallback(async (token?: string) => {
@@ -138,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     sessionGeneration.current += 1;
+    setIsSessionExpired(false);
     // Start the request while the current access token is still available, then
     // clear the browser session synchronously instead of waiting on the network.
     const logoutRequest = currentUserId
@@ -165,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [currentUserId]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, fetchProfile }}>
+    <AuthContext.Provider value={{ ...state, isSessionExpired, login, logout, fetchProfile }}>
       {children}
     </AuthContext.Provider>
   );

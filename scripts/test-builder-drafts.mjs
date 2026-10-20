@@ -323,3 +323,65 @@ test('HTTP client sends FormData without overriding its multipart boundary', asy
     globalThis.fetch = originalFetch;
   }
 });
+
+test('an expired refresh token emits one session-expired prompt and clears credentials', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalDispatchEvent = globalThis.window.dispatchEvent;
+  const events = [];
+  localStorage.setItem('rym_access_token', 'expired-access');
+  localStorage.setItem('rym_refresh_token', 'expired-refresh');
+  localStorage.setItem('rym_user', JSON.stringify({ id: 'alice' }));
+  globalThis.window.dispatchEvent = event => events.push(event.type);
+  globalThis.fetch = async () => new Response(JSON.stringify({ message: 'Unauthorized' }), {
+    status: 401,
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  try {
+    const httpModule = load('src/services/http-client.ts', {
+      '../config/api.config': {
+        API_CONFIG: { GATEWAY_URL: 'https://example.test' },
+        STORAGE_KEYS: config.STORAGE_KEYS,
+      },
+    });
+
+    await assert.rejects(httpModule.http.get('/protected'), error => error.status === 401);
+    assert.deepEqual(events, [httpModule.SESSION_EXPIRED_EVENT]);
+    assert.equal(localStorage.getItem('rym_access_token'), null);
+    assert.equal(localStorage.getItem('rym_refresh_token'), null);
+  } finally {
+    globalThis.fetch = originalFetch;
+    globalThis.window.dispatchEvent = originalDispatchEvent;
+  }
+});
+
+test('an unauthenticated 401 does not open the session-expired prompt', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalDispatchEvent = globalThis.window.dispatchEvent;
+  const events = [];
+  let requests = 0;
+  globalThis.window.dispatchEvent = event => events.push(event.type);
+  globalThis.fetch = async () => {
+    requests += 1;
+    return new Response(JSON.stringify({ message: 'Invalid credentials' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  try {
+    const httpModule = load('src/services/http-client.ts', {
+      '../config/api.config': {
+        API_CONFIG: { GATEWAY_URL: 'https://example.test' },
+        STORAGE_KEYS: config.STORAGE_KEYS,
+      },
+    });
+
+    await assert.rejects(httpModule.http.post('/user/login', {}), error => error.status === 401);
+    assert.equal(requests, 1);
+    assert.deepEqual(events, []);
+  } finally {
+    globalThis.fetch = originalFetch;
+    globalThis.window.dispatchEvent = originalDispatchEvent;
+  }
+});

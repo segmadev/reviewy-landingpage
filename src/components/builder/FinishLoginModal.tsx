@@ -11,11 +11,23 @@ interface FinishLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: () => void;
+  loginTitle?: string;
+  loginDescription?: string;
+  allowSignup?: boolean;
+  dismissible?: boolean;
 }
 
 type AuthMode = 'login' | 'signup';
 
-export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: FinishLoginModalProps) {
+export default function FinishLoginModal({
+  isOpen,
+  onClose,
+  onLoginSuccess,
+  loginTitle = 'Sign in to finish your CV',
+  loginDescription = 'Sign in to save your CV and continue to the review.',
+  allowSignup = true,
+  dismissible = true,
+}: FinishLoginModalProps) {
   const { login, fetchProfile } = useAuth();
   const { error: showError, success: showSuccess } = useToast();
 
@@ -35,7 +47,7 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
 
     try {
       const res = await loginJobSeeker(loginForm.email, loginForm.password);
-      login(res.token, res.token, res.user);
+      login(res.token, res.refreshToken, res.user);
 
       try {
         await fetchProfile(res.token);
@@ -113,7 +125,7 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={dismissible ? onClose : undefined}
             className="fixed inset-0 bg-black/50 z-50"
           />
 
@@ -127,21 +139,23 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-gray-900">
-                  {authMode === 'login' ? 'Sign in to finish your CV' : 'Create an account to finish'}
+                  {authMode === 'login' ? loginTitle : 'Create an account to finish'}
                 </h2>
-                <button
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                {dismissible && (
+                  <button
+                    onClick={onClose}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
 
               {/* Content */}
               <div className="p-6">
                 <p className="mb-4 text-sm leading-relaxed text-gray-600">
                   {authMode === 'login'
-                    ? 'Sign in to save your CV and continue to the review.'
+                    ? loginDescription
                     : 'Create an account to save your CV and continue to the review.'}
                 </p>
 
@@ -255,46 +269,50 @@ export default function FinishLoginModal({ isOpen, onClose, onLoginSuccess }: Fi
                   </form>
                 )}
 
-                <div className="relative my-5">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
-                  </div>
-                  <div className="relative flex justify-center text-xs text-gray-400 bg-white px-2">
-                    or
-                  </div>
-                </div>
+                {allowSignup && (
+                  <>
+                    <div className="relative my-5">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200" />
+                      </div>
+                      <div className="relative flex justify-center text-xs text-gray-400 bg-white px-2">
+                        or
+                      </div>
+                    </div>
 
-                <p className="text-center text-sm text-gray-600">
-                  {authMode === 'login' ? (
-                    <>
-                      Don't have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthMode('signup');
-                          setAuthError('');
-                        }}
-                        className="text-primary font-medium hover:underline"
-                      >
-                        Sign up
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      Already have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthMode('login');
-                          setAuthError('');
-                        }}
-                        className="text-primary font-medium hover:underline"
-                      >
-                        Sign in
-                      </button>
-                    </>
-                  )}
-                </p>
+                    <p className="text-center text-sm text-gray-600">
+                      {authMode === 'login' ? (
+                        <>
+                          Don't have an account?{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthMode('signup');
+                              setAuthError('');
+                            }}
+                            className="text-primary font-medium hover:underline"
+                          >
+                            Sign up
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          Already have an account?{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthMode('login');
+                              setAuthError('');
+                            }}
+                            className="text-primary font-medium hover:underline"
+                          >
+                            Sign in
+                          </button>
+                        </>
+                      )}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

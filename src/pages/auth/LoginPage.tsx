@@ -40,7 +40,7 @@ export default function LoginPage() {
       const res = await loginJobSeeker(loginForm.email, loginForm.password);
       console.log('✓ Login successful, token:', res.token?.substring(0, 20) + '...');
 
-      login(res.token, res.token, res.user);
+      login(res.token, res.refreshToken, res.user);
       console.log('✓ User state updated');
 
       // Fetch complete profile after login - pass token directly

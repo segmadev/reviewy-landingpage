@@ -120,7 +120,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setLoading(true);
     try {
       const res = await loginJobSeeker(loginForm.email, loginForm.password);
-      login(res.token, res.token, res.user);
+      login(res.token, res.refreshToken, res.user);
 
       try {
         await fetchProfile(res.token);
