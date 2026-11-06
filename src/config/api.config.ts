@@ -28,6 +28,7 @@ export const ENDPOINTS = {
   // Auth
   SIGNUP: '/user/signup',
   LOGIN: '/user/login',
+  PASSWORD_RESET_INITIATE: '/user/password-reset/initiate',
   LOGOUT: (userId: string) => `/user/logout/${userId}`,
   REFRESH_TOKEN: '/user/refresh-token',
   GET_PROFILE: '/user/profile',

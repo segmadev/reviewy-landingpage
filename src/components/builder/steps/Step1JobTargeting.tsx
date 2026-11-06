@@ -26,11 +26,10 @@ export default function Step1JobTargeting() {
     >
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Job Targeting</h2>
       <p className="text-gray-500 text-sm leading-relaxed mb-1">
-        This data helps the AI understand the job posting you're currently applying for.
+       This information helps the AI understand the job you're applying for and tailor your application accordingly.
       </p>
       <p className="text-gray-500 text-sm leading-relaxed mb-6">
-        Insert the link to the job posting you're applying to, or copy in the job description.
-        You can also paste your existing CV to auto-fill your details.
+       Please provide a publicly accessible link to the job advertisement or copy and paste the full job description below.
       </p>
 
       {/* Input */}

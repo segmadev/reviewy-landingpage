@@ -81,6 +81,24 @@ export async function loginJobSeeker(email: string, password: string): Promise<A
   }
 }
 
+export async function initiatePasswordReset(email: string): Promise<string> {
+  try {
+    const response = (await http.post(ENDPOINTS.PASSWORD_RESET_INITIATE, { email })) as {
+      message?: string;
+    };
+
+    return response.message || 'If an account exists for that email, a password reset link has been sent.';
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw new Error(
+        (error.data as { message?: string })?.message ||
+        'We could not request a password reset right now. Please try again.'
+      );
+    }
+    throw error;
+  }
+}
+
 export async function logoutUser(): Promise<void> {
   // Logout is called from AuthContext with user ID
   // No need for separate function here

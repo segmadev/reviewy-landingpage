@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import LandingPage             from './pages/LandingPage';
 import LoginPage               from './pages/auth/LoginPage';
+import ForgotPasswordPage      from './pages/auth/ForgotPasswordPage';
 import BuilderPage             from './pages/builder/BuilderPage';
 import BuilderResultPage       from './pages/builder/BuilderResultPage';
 import ChooseTemplatePage      from './pages/builder/ChooseTemplatePage';
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/',                      element: <LandingPage />            },
       { path: '/auth/login',            element: <LoginPage />              },
+      { path: '/auth/forgot-password',  element: <ForgotPasswordPage />     },
       { path: '/builder/template',      element: <ChooseTemplatePage />     },
       { path: '/builder/result/:cvId?', element: <BuilderResultPage />      },
       { path: '/builder/:id?',          element: <BuilderPage />            },
