@@ -8,7 +8,7 @@
  * 5. Verify payment on return
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, CheckCircle2, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -50,6 +50,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup polling on unmount to prevent lingering intervals
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    };
+  }, []);
 
   // Auth form states
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -58,6 +68,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     password: '',
   });
   const [hasAcceptedLegal, setHasAcceptedLegal] = useState(false);
+
+  // Stable refs so the effect doesn't re-run when parent re-renders
+  const onPaymentSuccessRef = useRef(_onPaymentSuccess);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onPaymentSuccessRef.current = _onPaymentSuccess; }, [_onPaymentSuccess]);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   // Load products when modal opens and user is authenticated
   useEffect(() => {
@@ -79,8 +95,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             // Auto-retry the AI request after a short delay
             setTimeout(() => {
-              _onPaymentSuccess();
-              onClose();
+              onPaymentSuccessRef.current();
+              onCloseRef.current();
             }, 2000);
             return;
           }
@@ -112,7 +128,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     };
 
     loadData();
-  }, [isOpen, isAuthenticated, showError, _onPaymentSuccess, onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isAuthenticated]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,30 +236,37 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       if (response.paymentLink) {
         window.open(response.paymentLink, '_blank');
 
+        // Clear any existing poll before starting a new one
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+
         // Start polling for payment verification after user closes payment tab
-        const pollPaymentStatus = setInterval(async () => {
+        pollIntervalRef.current = setInterval(async () => {
           try {
             // Check if payment was verified
             const verification = await verifyPayment(response.transactionId);
             const status = verification.paymentStatus || verification.status;
 
             if (status === 'SUCCESS' || status === 'success') {
-              clearInterval(pollPaymentStatus);
+              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+              if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
               setStep('payment-success');
 
               // Auto-retry the AI request after a short delay
               setTimeout(() => {
-                _onPaymentSuccess();
-                onClose();
+                onPaymentSuccessRef.current();
+                onCloseRef.current();
               }, 2000);
             }
           } catch {
             console.log('Payment verification pending...');
           }
-        }, 2000); // Check every 2 seconds
+        }, 3000); // Check every 3 seconds
 
         // Stop polling after 15 minutes
-        setTimeout(() => clearInterval(pollPaymentStatus), 15 * 60 * 1000);
+        pollTimeoutRef.current = setTimeout(() => {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        }, 15 * 60 * 1000);
       } else {
         showError('Payment link not provided by server.');
         setStep('products');
@@ -272,8 +296,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
         // Auto-retry the AI request after a short delay
         setTimeout(() => {
-          _onPaymentSuccess();
-          onClose();
+          onPaymentSuccessRef.current();
+          onCloseRef.current();
         }, 2000);
       }
     } catch (error) {

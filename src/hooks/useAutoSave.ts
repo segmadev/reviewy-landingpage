@@ -39,6 +39,10 @@ export function useAutoSave() {
   const { state, dispatch } = useBuilder();
   const { isAuthenticated, user } = useAuth();
   const previousOwner = useRef(getStoredBuilderUserId());
+  // Keep a ref to state so we can read the latest value inside the effect
+  // without adding it to the dependency array (which would re-run on every keystroke).
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   useEffect(() => {
     const owner = user?.id ?? null;
@@ -49,12 +53,12 @@ export function useAutoSave() {
     previousOwner.current = owner;
     if (!owner) {
       dispatch({ type: 'NEW_CV' });
-    } else if (!previous && hasBuilderProgress(state)) {
-      saveBuilderDraft(owner, state);
+    } else if (!previous && hasBuilderProgress(stateRef.current)) {
+      saveBuilderDraft(owner, stateRef.current);
       deleteAnonymousDraft();
     } else {
       const checkpoint = loadBuilderDraft(owner);
       dispatch(checkpoint ? { type: 'RESTORE_DRAFT', payload: checkpoint } : { type: 'NEW_CV' });
     }
-  }, [state, user?.id, isAuthenticated, dispatch]);
+  }, [user?.id, isAuthenticated, dispatch]);
 }

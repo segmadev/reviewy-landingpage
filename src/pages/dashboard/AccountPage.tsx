@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Camera, Eye, EyeOff, Save, Lock, User, Menu, X, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Camera, Eye, EyeOff, Save, Lock, User, Menu, X, LogOut, Trash2, AlertTriangle } from 'lucide-react';
 import DashboardSidebar from '../../components/dashboard/DashboardSidebar';
 import { useAuth } from '../../context/AuthContext';
-import { updateProfile, changePassword } from '../../services/api';
+import { updateProfile, changePassword, deleteAccount } from '../../services/api';
 
 type Tab = 'personal' | 'security';
 
@@ -51,6 +51,152 @@ function Field({
   );
 }
 
+// ── Delete Account Confirmation Modal ─────────────────────────────────────────
+function DeleteAccountModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  deleting,
+  userEmail,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  deleting: boolean;
+  userEmail: string;
+}) {
+  const [confirmText, setConfirmText] = useState('');
+  const isConfirmed = confirmText === 'DELETE';
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden"
+        >
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 flex items-start gap-4">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(239,68,68,0.1)' }}
+            >
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-gray-900">Delete Account</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                This action is permanent and cannot be undone.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              disabled={deleting}
+              className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="px-6 pb-4 space-y-4">
+            <div className="p-3 rounded-lg bg-red-50 border border-red-100">
+              <p className="text-sm text-red-700 leading-relaxed">
+                Deleting your account will permanently remove:
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-red-600">
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">•</span>
+                  <span>Your profile and personal information</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">•</span>
+                  <span>All saved CVs and resumes</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">•</span>
+                  <span>Any remaining AI credits</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5">•</span>
+                  <span>Payment and transaction history</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                Account: <strong className="text-gray-900">{userEmail}</strong>
+              </p>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+                Type DELETE to confirm
+              </label>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="DELETE"
+                disabled={deleting}
+                className="w-full px-4 py-3 rounded-lg text-sm text-gray-900 focus:outline-none transition-colors"
+                style={{
+                  background: '#F7F8F6',
+                  border: `1.5px solid ${isConfirmed ? '#EF4444' : '#E5E7EB'}`,
+                  fontSize: 'max(16px, 0.875em)',
+                }}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex gap-3 px-6 py-4 border-t" style={{ borderColor: '#E5E7EB' }}>
+            <button
+              onClick={onClose}
+              disabled={deleting}
+              className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50"
+              style={{ background: '#F7F8F6', border: '1.5px solid #E5E7EB' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={!isConfirmed || deleting}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: '#EF4444' }}
+            >
+              {deleting ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-25" />
+                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  Deleting…
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  Delete My Account
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 // ── Account Page ──────────────────────────────────────────────────────────────
 export default function AccountPage() {
   const navigate = useNavigate();
@@ -77,6 +223,10 @@ export default function AccountPage() {
 
   const [saving,     setSaving]     = useState(false);
   const [toast,      setToast]      = useState('');
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -109,6 +259,18 @@ export default function AccountPage() {
       navigate('/');
     } catch {
       showToast('Error logging out. Please try again.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      await logout();
+      navigate('/');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Failed to delete account. Please try again.');
+      setDeleting(false);
     }
   };
 
@@ -293,8 +455,46 @@ export default function AccountPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* ── Danger Zone ─────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-2xl overflow-hidden mt-4 sm:mt-5"
+            style={{ border: '1.5px solid #FECACA' }}
+          >
+            <div className="px-6 py-4 border-b" style={{ borderColor: '#FECACA', background: 'rgba(239,68,68,0.03)' }}>
+              <h3 className="text-sm font-bold text-red-600 uppercase tracking-wide">Danger Zone</h3>
+            </div>
+            <div className="px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900">Delete your account</p>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  Permanently delete your account and all associated data including CVs, credits, and payment history. This action cannot be undone.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 whitespace-nowrap flex-shrink-0"
+                style={{ border: '1.5px solid #FECACA' }}
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Account
+              </button>
+            </div>
+          </motion.div>
         </div>
       </main>
+
+      {/* Delete Account Confirmation Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => !deleting && setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        deleting={deleting}
+        userEmail={user?.email ?? ''}
+      />
 
       {/* Toast */}
       {toast && (

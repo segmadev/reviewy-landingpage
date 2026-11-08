@@ -421,7 +421,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
 export async function deleteAccount(): Promise<void> {
   try {
-    await http.delete(ENDPOINTS.GET_PROFILE);
+    await http.delete(ENDPOINTS.DELETE_ACCOUNT);
   } catch (error) {
     if (error instanceof HttpError) {
       throw new Error('Failed to delete account.');

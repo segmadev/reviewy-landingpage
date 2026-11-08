@@ -34,6 +34,7 @@ export const ENDPOINTS = {
   GET_PROFILE: '/user/profile',
   CHANGE_PASSWORD: '/user/profile/password',
   GET_USER: (userId: string) => `/user/${userId}`,
+  DELETE_ACCOUNT: '/user/me',
 
   // Resumes
   CREATE_RESUME: '/resume/resumes',
