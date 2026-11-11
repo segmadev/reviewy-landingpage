@@ -15,6 +15,8 @@ export interface WorkExperience {
   startDate: string;
   endDate: string;
   responsibilities: string[];
+  // Builder-only: which responsibilities were accepted from AI suggestions. Not sent to the backend.
+  aiResponsibilities?: string[];
 }
 
 export interface Education {
@@ -47,6 +49,8 @@ export interface ResumeData {
   portfolioLinks: string[];
   professionalSummary: string;
   skills: string[];
+  // Builder-only: which skills were accepted from AI suggestions. Not sent to the backend.
+  aiSkills?: string[];
   workExperience: WorkExperience[];
   education: Education[];
   relevantCourseWork: string;
@@ -123,6 +127,7 @@ export interface SavedCV {
   portfolioLinks: string[];
   professionalSummary: string;
   skills: string[];
+  aiSkills?: string[];
   workExperience: WorkExperience[];
   education: Education[];
   relevantCourseWork: string;

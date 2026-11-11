@@ -239,6 +239,7 @@ function reducer(state: BuilderState, action: Action): BuilderState {
         portfolioLinks: cv.portfolioLinks || [],
         professionalSummary: cv.professionalSummary || '',
         skills: cv.skills || [],
+        aiSkills: cv.aiSkills || [],
         workExperience: ensureUniqueEntityIds(cv.workExperience || []),
         education: ensureUniqueEntityIds(cv.education || []),
         relevantCourseWork: cv.relevantCourseWork || '',

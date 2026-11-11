@@ -10,6 +10,9 @@ import { usePaymentGate } from '../../../hooks/usePaymentGate';
 import PaymentModal from '../../PaymentModal';
 import { useAIConversation } from '../../../hooks/useAIConversation';
 import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
+import { useUndoRemoval } from '../../../hooks/useUndoRemoval';
+import UndoRemovalToast from '../UndoRemovalToast';
+import SourceBadge, { type ContentSource } from '../SourceBadge';
 
 export default function Step5Skills() {
   const { state, prevStep } = useBuilder();
@@ -19,6 +22,9 @@ export default function Step5Skills() {
   const paymentGate = usePaymentGate();
   const { conversationId, rememberConversation } = useAIConversation();
   const [skills, setSkills] = useBuilderField('skills');
+  const [aiSkills, setAiSkills] = useBuilderField('aiSkills');
+  const aiSkillList = aiSkills ?? [];
+  const undo = useUndoRemoval();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [reasoning, setReasoning] = useState('');
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -55,16 +61,30 @@ export default function Step5Skills() {
     }
   };
 
-  const addSkill = (skill: string) => {
-    if (!skills.includes(skill)) {
-      setSkills((prev) => [...prev, skill]);
-      setSuggestions((prev) => prev.filter((s) => s !== skill));
-    }
+  const addSkill = (skill: string, source: ContentSource = 'user') => {
+    if (skills.includes(skill)) return;
+    setSkills((prev) => [...prev, skill]);
+    if (source === 'ai') setAiSkills((prev) => [...(prev ?? []), skill]);
+    setSuggestions((prev) => prev.filter((s) => s !== skill));
   };
 
   const removeSkill = (skill: string) => {
+    const wasAI = aiSkillList.includes(skill);
+    const index = skills.indexOf(skill);
     setSkills((prev) => prev.filter((s) => s !== skill));
-    setSuggestions((prev) => [...prev, skill]);
+    setAiSkills((prev) => (prev ?? []).filter((s) => s !== skill));
+    if (wasAI) setSuggestions((prev) => [...prev, skill]);
+
+    undo.register(skill, () => {
+      setSkills((prev) => {
+        if (prev.includes(skill)) return prev;
+        const next = [...prev];
+        next.splice(Math.min(index, next.length), 0, skill);
+        return next;
+      });
+      if (wasAI) setAiSkills((prev) => [...(prev ?? []).filter((s) => s !== skill), skill]);
+      setSuggestions((prev) => prev.filter((s) => s !== skill));
+    });
   };
 
   const addCustom = () => {
@@ -80,6 +100,7 @@ export default function Step5Skills() {
   };
 
   return (
+    <>
     <motion.div
       key="step5"
       initial={{ opacity: 0, x: 20 }}
@@ -92,23 +113,44 @@ export default function Step5Skills() {
 
       {/* Current skills */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-3">Your Skills</label>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <label className="block text-sm font-medium text-gray-700">Your Skills</label>
+          {skills.length > 0 && (
+            <div className="flex items-center gap-2">
+              <SourceBadge source="user" userLabel="Added by you" />
+              <SourceBadge source="ai" />
+            </div>
+          )}
+        </div>
         <div className="min-h-[60px] p-3 rounded-xl bg-gray-50 border border-gray-200 flex flex-wrap gap-2">
           <AnimatePresence>
-            {skills.map((skill) => (
-              <motion.span
-                key={skill}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary text-white text-xs font-medium"
-              >
-                {skill}
-                <button onClick={() => removeSkill(skill)} className="hover:opacity-70">
-                  <X className="w-3 h-3" />
-                </button>
-              </motion.span>
-            ))}
+            {skills.map((skill) => {
+              const isAI = aiSkillList.includes(skill);
+              return (
+                <motion.span
+                  key={skill}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+                    isAI
+                      ? 'bg-white border border-primary/40 text-primary'
+                      : 'bg-primary text-white'
+                  }`}
+                >
+                  {isAI && <Sparkles aria-hidden="true" className="w-3 h-3" />}
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(skill)}
+                    aria-label={`Remove ${skill}`}
+                    className="hover:opacity-70"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </motion.span>
+              );
+            })}
           </AnimatePresence>
           {skills.length === 0 && (
             <span className="text-gray-400 text-sm">Click suggestions below to add skills…</span>
@@ -166,7 +208,7 @@ export default function Step5Skills() {
             <motion.button
               key={s}
               whileHover={{ scale: 1.03 }}
-              onClick={() => addSkill(s)}
+              onClick={() => addSkill(s, 'ai')}
               className="px-3 py-1 rounded-full border border-primary/30 text-primary text-xs font-medium bg-mint-50 hover:bg-primary hover:text-white transition-colors"
             >
               + {s}
@@ -223,5 +265,7 @@ export default function Step5Skills() {
         requiredCredits={paymentGate.requiredCredits}
       />
     </motion.div>
+    <UndoRemovalToast pending={undo.pending} onUndo={undo.undo} onDismiss={undo.dismiss} />
+    </>
   );
 }

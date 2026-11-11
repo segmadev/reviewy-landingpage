@@ -13,9 +13,37 @@ import { isDateFieldComplete, isPresentDate, monthInputToDate, PRESENT_DATE } fr
 import { useAIConversation } from '../../../hooks/useAIConversation';
 import { useSaveAndContinue } from '../../../hooks/useSaveAndContinue';
 import { createEntityId } from '../../../utils/entityIds';
+import { useUndoRemoval } from '../../../hooks/useUndoRemoval';
+import UndoRemovalToast from '../UndoRemovalToast';
+import SourceBadge, { type ContentSource } from '../SourceBadge';
 
 function newEntry(): WorkExperience {
   return { id: createEntityId(), company: '', position: '', startDate: '', endDate: '', responsibilities: [''] };
+}
+
+const isAIBullet = (entry: WorkExperience, text: string) => (entry.aiResponsibilities ?? []).includes(text);
+
+function withoutBullet(entry: WorkExperience, idx: number): WorkExperience {
+  const removed = entry.responsibilities[idx];
+  const remaining = entry.responsibilities.filter((_, i) => i !== idx);
+  return {
+    ...entry,
+    responsibilities: remaining.length > 0 ? remaining : [''],
+    aiResponsibilities: (entry.aiResponsibilities ?? []).filter((t) => t !== removed),
+  };
+}
+
+function withBullet(entry: WorkExperience, idx: number, text: string, wasAI: boolean): WorkExperience {
+  const current =
+    entry.responsibilities.length === 1 && entry.responsibilities[0] === ''
+      ? []
+      : [...entry.responsibilities];
+  current.splice(Math.min(idx, current.length), 0, text);
+  return {
+    ...entry,
+    responsibilities: current,
+    aiResponsibilities: wasAI ? [...(entry.aiResponsibilities ?? []), text] : entry.aiResponsibilities,
+  };
 }
 
 export default function Step3WorkHistory() {
@@ -49,12 +77,22 @@ export default function Step3WorkHistory() {
       prev.map((e) => (e.id === id ? { ...e, responsibilities: [...e.responsibilities, ''] } : e))
     );
 
-  const removeBullet = (id: string, idx: number) =>
-    setEntries((prev) =>
-      prev.map((e) =>
-        e.id === id ? { ...e, responsibilities: e.responsibilities.filter((_, i) => i !== idx) } : e
-      )
+  const undo = useUndoRemoval();
+
+  const removeBullet = (id: string, idx: number) => {
+    const entry = entries.find((e) => e.id === id);
+    const text = entry?.responsibilities[idx];
+    if (!entry || text === undefined) return;
+
+    const wasAI = isAIBullet(entry, text);
+    setEntries((prev) => prev.map((e) => (e.id === id ? withoutBullet(e, idx) : e)));
+
+    if (text.trim().length === 0) return;
+    const preview = text.length > 48 ? `${text.slice(0, 48).trimEnd()}…` : text;
+    undo.register(preview, () =>
+      setEntries((prev) => prev.map((e) => (e.id === id ? withBullet(e, idx, text, wasAI) : e)))
     );
+  };
 
   const requestAI = async (id: string) => {
     setAiTarget(id);
@@ -86,7 +124,13 @@ export default function Step3WorkHistory() {
   const acceptBullet = (id: string, bullet: string) => {
     setEntries((prev) =>
       prev.map((e) =>
-        e.id === id ? { ...e, responsibilities: [...e.responsibilities.filter(Boolean), bullet] } : e
+        e.id === id
+          ? {
+              ...e,
+              responsibilities: [...e.responsibilities.filter(Boolean), bullet],
+              aiResponsibilities: [...(e.aiResponsibilities ?? []), bullet],
+            }
+          : e
       )
     );
     setAiBullets((prev) => prev.filter((b) => b !== bullet));
@@ -122,6 +166,7 @@ export default function Step3WorkHistory() {
   };
 
   return (
+    <>
     <motion.div
       key="step3"
       initial={{ opacity: 0, x: 20 }}
@@ -235,26 +280,35 @@ export default function Step3WorkHistory() {
                   <span className="text-red-500 ml-1">*</span>
                 </label>
                 <div className="space-y-2">
-                  {entry.responsibilities.map((r, ri) => (
-                    <div key={ri} className="flex gap-2 items-start">
-                      <span className="text-primary mt-2.5 text-xs shrink-0">▪</span>
-                      <textarea
-                        value={r}
-                        onChange={(e) => updateBullet(entry.id, ri, e.target.value)}
-                        placeholder="Describe your key achievements and experience honestly. This may include previous employment, volunteer work, relevant school projects, or online courses, provided they relate to the position you are applying for."
-                        rows={5}
-                        className="flex-1 px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm resize-none overflow-hidden"
-                      />
-                      {entry.responsibilities.length > 1 && (
-                        <button
-                          onClick={() => removeBullet(entry.id, ri)}
-                          className="text-gray-300 hover:text-danger mt-2 shrink-0"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {entry.responsibilities.map((r, ri) => {
+                    const source: ContentSource = isAIBullet(entry, r) ? 'ai' : 'user';
+                    return (
+                      <div key={ri} className="flex gap-2 items-start">
+                        <span className="text-primary mt-2.5 text-xs shrink-0">▪</span>
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            {r.trim().length > 0 ? <SourceBadge source={source} /> : <span />}
+                            <button
+                              type="button"
+                              onClick={() => removeBullet(entry.id, ri)}
+                              aria-label="Remove this bullet point"
+                              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-600 transition-colors"
+                            >
+                              <Trash2 aria-hidden="true" className="w-3 h-3" />
+                              Remove
+                            </button>
+                          </div>
+                          <textarea
+                            value={r}
+                            onChange={(e) => updateBullet(entry.id, ri, e.target.value)}
+                            placeholder="Describe your key achievements and experience honestly. This may include previous employment, volunteer work, relevant school projects, or online courses, provided they relate to the position you are applying for."
+                            rows={5}
+                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 focus:border-primary focus:outline-none text-sm resize-none overflow-hidden"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <button
                   onClick={() => addBullet(entry.id)}
@@ -395,5 +449,7 @@ export default function Step3WorkHistory() {
         requiredCredits={paymentGate.requiredCredits}
       />
     </motion.div>
+    <UndoRemovalToast pending={undo.pending} onUndo={undo.undo} onDismiss={undo.dismiss} />
+    </>
   );
 }
