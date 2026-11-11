@@ -11,7 +11,7 @@ const HowItWorks: React.FC = () => {
     {
       icon: Upload,
       title: 'Paste a Job URL',
-      description: 'No copy-pasting job descriptions. Drop in the link from any UK job board and our AI reads the role requirements.',
+      description: 'Paste in the full job description from any UK job board. Our AI reads it and picks out the role requirements for you.',
     },
     {
       icon: Briefcase,
