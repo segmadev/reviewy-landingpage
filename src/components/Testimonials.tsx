@@ -8,19 +8,34 @@ const Testimonials: React.FC = () => {
 
   const testimonials = [
     {
-      name: 'David L.',
-      role: 'Recruiter',
-      text: 'The pay-per-unlock model is fantastic. It saves us so much budget and time by focusing on high-intent candidates.',
+      name: 'Steven',
+      role: 'Customer Service Adviser',
+      text: 'My ‘achievements’ box had been blank for weeks. The suggestions reminded me of things I’d actually done at work. I kept the ones that were true and deleted the rest.',
     },
     {
-      name: 'Aisha K.',
+      name: 'Jacob',
+      role: 'Career changer',
+      text: 'I was changing from retail to office admin and didn’t know how to explain my experience. It picked out the stock records and customer queries and worded them the way an admin job would.',
+    },
+    {
+      name: 'David',
       role: 'Software Engineer',
-      text: 'I built and tailored my CV in 10 minutes. The matching system actually works and respects my privacy.',
+      text: 'I like that nothing goes on the CV until you approve it. Two suggestions didn’t fit my role, so I edited them.',
     },
     {
-      name: 'Marcus J.',
-      role: 'Hiring Manager',
-      text: 'ReviewyMe delivers the most relevant candidates I’ve seen on any platform. A game changer for recruitment.',
+      name: 'Aisha',
+      role: 'Data Analyst',
+      text: 'It used the language from the job advert without stuffing in keywords. I still had to adjust a few tools, but the structure saved me a lot of time.',
+    },
+    {
+      name: 'Mary',
+      role: 'Public sector worker',
+      text: 'I’ve worked in the same organisation for years and had stopped noticing what I do. Seeing it written down properly was a bit of a surprise.',
+    },
+    {
+      name: 'Daniel',
+      role: 'Recent graduate',
+      text: 'It was clear which bits were suggestions and which were mine. That made me comfortable using it.',
     },
   ];
 

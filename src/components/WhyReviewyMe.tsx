@@ -14,8 +14,8 @@ const WhyReviewyMe: React.FC = () => {
     },
     {
       icon: Link2,
-      title: 'Paste a Job URL — Done',
-      description: 'No copy-pasting job descriptions. Drop in the link from any UK job board and our AI reads the role requirements for you, instantly.',
+      title: 'Paste a job description. We’ll do the rest.',
+      description: 'Drop in a job description from any UK job board and our AI instantly picks out what the employer wants, so you can tailor your CV to see how well you match.',
     },
     {
       icon: CheckCircle2,

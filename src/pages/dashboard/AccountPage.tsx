@@ -139,7 +139,7 @@ function DeleteAccountModal({
               <p className="text-sm text-gray-600 mb-2">
                 Account: <strong className="text-gray-900">{userEmail}</strong>
               </p>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">
                 Type DELETE to confirm
               </label>
               <input

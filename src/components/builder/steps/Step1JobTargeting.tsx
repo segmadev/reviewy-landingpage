@@ -25,11 +25,8 @@ export default function Step1JobTargeting() {
       className="max-w-xl"
     >
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Job Targeting</h2>
-      <p className="text-gray-500 text-sm leading-relaxed mb-1">
-       This information helps the AI understand the job you're applying for and tailor your application accordingly.
-      </p>
       <p className="text-gray-500 text-sm leading-relaxed mb-6">
-       Please provide a publicly accessible link to the job advertisement or copy and paste the full job description below.
+        This information helps the AI understand the job you're applying for and tailor your application accordingly. Please copy and paste the full job description advertisement below
       </p>
 
       {/* Input */}
