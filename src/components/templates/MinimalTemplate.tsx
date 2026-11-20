@@ -1,6 +1,7 @@
 import type { ResumeData } from '../../types/resume';
 import { formatDate, formatEndDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
 import type { TemplateOptions } from './utils';
+import PortfolioLinks from './PortfolioLinks';
 
 interface Props { data: Partial<ResumeData>; scale?: number; options?: TemplateOptions; }
 
@@ -50,7 +51,6 @@ export default function MinimalTemplate({ data, scale: s = 1, options }: Props) 
           contactDetails?.phone,
           [contactDetails?.address, contactDetails?.city, contactDetails?.postcode].filter(Boolean).join(', '),
           linkedinProfile?.replace('https://', ''),
-          ...(portfolioLinks ?? []).map(link => link.replace('https://', ''))
         ]
           .filter(Boolean).map((item, i) => <span key={i}>{item}</span>)}
       </div>
@@ -96,6 +96,10 @@ export default function MinimalTemplate({ data, scale: s = 1, options }: Props) 
             </div>
           ))}
         </div>
+      </>) : null}
+
+      {portfolioLinks?.some(l => l.trim()) ? (<><Label text="Portfolio" /><Rule />
+        <PortfolioLinks links={portfolioLinks} color={accent} fontSize={8.5 * s * fs} scale={s} />
       </>) : null}
 
       {skills?.length ? (<><Label text="Skills" /><Rule />

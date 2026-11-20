@@ -1,6 +1,7 @@
 import type { ResumeData } from '../../types/resume';
 import { formatDate, formatEndDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
 import type { TemplateOptions } from './utils';
+import PortfolioLinks from './PortfolioLinks';
 
 interface Props { data: Partial<ResumeData>; scale?: number; options?: TemplateOptions; }
 
@@ -72,11 +73,14 @@ export default function SidebarTemplate({ data, scale: s = 1, options }: Props) 
             {contactDetails?.phone && <span>{contactDetails.phone}</span>}
             {contactDetails?.address && <span>{[contactDetails.address, contactDetails.city, contactDetails.postcode].filter(Boolean).join(', ')}</span>}
             {linkedinProfile && <span style={{ wordBreak: 'break-all' as const }}>{linkedinProfile.replace('https://', '')}</span>}
-            {(portfolioLinks ?? []).filter(Boolean).map((link) => (
-              <span key={link} style={{ wordBreak: 'break-all' as const }}>{link.replace('https://', '')}</span>
-            ))}
           </div>
         </SidebarSection>
+
+        {portfolioLinks?.some(l => l.trim()) ? (
+          <SidebarSection title="Portfolio">
+            <PortfolioLinks links={portfolioLinks} color="#ffffff" fontSize={7.5 * s * fs} scale={s} />
+          </SidebarSection>
+        ) : null}
 
         {skills?.length ? (
           <SidebarSection title="Skills">

@@ -1,6 +1,7 @@
 import type { ResumeData } from '../../types/resume';
 import { formatDate, formatEndDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
 import type { TemplateOptions } from './utils';
+import PortfolioLinks from './PortfolioLinks';
 
 interface Props { data: Partial<ResumeData>; scale?: number; options?: TemplateOptions; }
 
@@ -36,7 +37,6 @@ export default function ExecutiveTemplate({ data, scale: s = 1, options }: Props
     contactDetails?.phone,
     [contactDetails?.address, contactDetails?.city, contactDetails?.postcode].filter(Boolean).join(', '),
     linkedinProfile?.replace('https://', ''),
-    ...(portfolioLinks ?? []).map(link => link.replace('https://', ''))
   ].filter(Boolean);
 
   return (
@@ -110,6 +110,12 @@ export default function ExecutiveTemplate({ data, scale: s = 1, options }: Props
                 </div>
               ))}
             </div>
+          </Section>
+        ) : null}
+
+        {portfolioLinks?.some(l => l.trim()) ? (
+          <Section title="Portfolio">
+            <PortfolioLinks links={portfolioLinks} color={headerBg} fontSize={8.5 * s * fs} scale={s} />
           </Section>
         ) : null}
 

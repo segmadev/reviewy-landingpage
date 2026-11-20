@@ -1,6 +1,7 @@
 import type { ResumeData } from '../../types/resume';
 import { formatDate, formatEndDate, getFontFamily, getFontSizeScale, SPACING_SCALE, LINE_HEIGHT_SCALE } from './utils';
 import type { TemplateOptions } from './utils';
+import PortfolioLinks from './PortfolioLinks';
 
 interface Props { data: Partial<ResumeData>; scale?: number; options?: TemplateOptions; }
 
@@ -49,7 +50,6 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
             contactDetails?.phone,
             contactDetails?.email,
             linkedinProfile?.replace('https://', ''),
-            ...(portfolioLinks ?? []).map(link => link.replace('https://', ''))
           ]
             .filter(Boolean).map((item, i, arr) => (
               <span key={`contact-${i}`}>{item}{i < arr.length - 1 ? ' ·' : ''}</span>
@@ -98,6 +98,10 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
             </div>
           ))}
         </div>
+      </>) : null}
+
+      {portfolioLinks?.some(l => l.trim()) ? (<><Divider title="Portfolio" />
+        <PortfolioLinks links={portfolioLinks} color={accent} fontSize={8.5 * s * fs} scale={s} />
       </>) : null}
 
       {skills?.length ? (<><Divider title="Skills" />
