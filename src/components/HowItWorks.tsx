@@ -10,7 +10,7 @@ const HowItWorks: React.FC = () => {
   const steps = [
     {
       icon: Upload,
-      title: 'Paste a Job URL',
+      title: 'Paste a Job Description',
       description: 'Paste in the full job description from any UK job board. Our AI reads it and picks out the role requirements for you.',
     },
     {

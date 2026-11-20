@@ -15,7 +15,7 @@ export default function ExecutiveTemplate({ data, scale: s = 1, options }: Props
   const accent = opts.accentColor;
   const headerBg = opts.headerBg;
 
-  const { contactDetails, linkedinProfile, professionalSummary,
+  const { contactDetails, linkedinProfile, portfolioLinks, professionalSummary,
     skills, workExperience, education, certifications, references,
     languages, awards, hobbies } = data;
 
@@ -35,7 +35,8 @@ export default function ExecutiveTemplate({ data, scale: s = 1, options }: Props
     contactDetails?.email,
     contactDetails?.phone,
     [contactDetails?.address, contactDetails?.city, contactDetails?.postcode].filter(Boolean).join(', '),
-    linkedinProfile?.replace('https://', '')
+    linkedinProfile?.replace('https://', ''),
+    ...(portfolioLinks ?? []).map(link => link.replace('https://', ''))
   ].filter(Boolean);
 
   return (

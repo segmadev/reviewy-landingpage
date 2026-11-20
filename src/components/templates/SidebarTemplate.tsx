@@ -72,7 +72,9 @@ export default function SidebarTemplate({ data, scale: s = 1, options }: Props) 
             {contactDetails?.phone && <span>{contactDetails.phone}</span>}
             {contactDetails?.address && <span>{[contactDetails.address, contactDetails.city, contactDetails.postcode].filter(Boolean).join(', ')}</span>}
             {linkedinProfile && <span style={{ wordBreak: 'break-all' as const }}>{linkedinProfile.replace('https://', '')}</span>}
-            {portfolioLinks?.[0] && <span style={{ wordBreak: 'break-all' as const }}>{portfolioLinks[0].replace('https://', '')}</span>}
+            {(portfolioLinks ?? []).filter(Boolean).map((link) => (
+              <span key={link} style={{ wordBreak: 'break-all' as const }}>{link.replace('https://', '')}</span>
+            ))}
           </div>
         </SidebarSection>
 

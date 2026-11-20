@@ -50,7 +50,7 @@ export default function MinimalTemplate({ data, scale: s = 1, options }: Props) 
           contactDetails?.phone,
           [contactDetails?.address, contactDetails?.city, contactDetails?.postcode].filter(Boolean).join(', '),
           linkedinProfile?.replace('https://', ''),
-          portfolioLinks?.[0]?.replace('https://', '')
+          ...(portfolioLinks ?? []).map(link => link.replace('https://', ''))
         ]
           .filter(Boolean).map((item, i) => <span key={i}>{item}</span>)}
       </div>

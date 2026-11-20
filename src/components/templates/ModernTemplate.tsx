@@ -61,7 +61,9 @@ export default function ModernTemplate({ data, scale: s = 1, options }: Props) {
           {contactDetails?.phone && <span>✆ {contactDetails.phone}</span>}
           {contactDetails?.address && <span>⌖ {[contactDetails.address, contactDetails.city, contactDetails.postcode].filter(Boolean).join(', ')}</span>}
           {linkedinProfile && <span>in {linkedinProfile.replace('https://', '')}</span>}
-          {portfolioLinks?.[0] && <span>⧉ {portfolioLinks[0].replace('https://', '')}</span>}
+          {(portfolioLinks ?? []).filter(Boolean).map((link) => (
+            <span key={link}>⧉ {link.replace('https://', '')}</span>
+          ))}
         </div>
       </div>
 

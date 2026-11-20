@@ -49,7 +49,7 @@ export default function ClassicTemplate({ data, scale: s = 1, options }: Props) 
             contactDetails?.phone,
             contactDetails?.email,
             linkedinProfile?.replace('https://', ''),
-            portfolioLinks?.[0]?.replace('https://', '')
+            ...(portfolioLinks ?? []).map(link => link.replace('https://', ''))
           ]
             .filter(Boolean).map((item, i, arr) => (
               <span key={`contact-${i}`}>{item}{i < arr.length - 1 ? ' ·' : ''}</span>
